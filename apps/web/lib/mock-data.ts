@@ -291,6 +291,64 @@ export const pullRequests: PullRequest[] = [
                 replies: [],
             },
         ],
+        solutions: [
+            {
+                id: "s1",
+                author: {
+                    name: "David Kim",
+                    avatar: "https://i.pravatar.cc/150?u=david",
+                },
+                description: "Focused on type safety and catching the race condition in useEffect.",
+                upvotes: 12,
+                timestamp: Date.now() - 1000 * 60 * 60 * 24, // 1 day ago
+                comments: [
+                    {
+                        id: "c1",
+                        fileIndex: 0, // useUserProfile.ts
+                        lineIndex: 22,
+                        text: "Avoid `any` here. Use `unknown` and type narrowing.",
+                        severity: "critical",
+                        timestamp: Date.now(),
+                        author: {
+                            name: "David Kim",
+                            avatar: "https://i.pravatar.cc/150?u=david",
+                        },
+                    },
+                    {
+                        id: "c2",
+                        fileIndex: 0, // useUserProfile.ts
+                        lineIndex: 16,
+                        text: "This useEffect needs a cleanup function to prevent state updates on unmounted components.",
+                        severity: "critical",
+                        timestamp: Date.now(),
+                        author: {
+                            name: "David Kim",
+                            avatar: "https://i.pravatar.cc/150?u=david",
+                        },
+                    },
+                ],
+            },
+            {
+                id: "s2",
+                author: {
+                    name: "Emily White",
+                    avatar: "https://i.pravatar.cc/150?u=emily",
+                },
+                description: "Suggested using React Query for better caching and stated management.",
+                upvotes: 8,
+                timestamp: Date.now() - 1000 * 60 * 60 * 12, // 12 hours ago
+                comments: [
+                    {
+                        id: "c3",
+                        fileIndex: 0, // useUserProfile.ts
+                        lineIndex: 11,
+                        text: "Consider replacing this whole hook with `useQuery` from React Query.",
+                        severity: "suggestion",
+                        timestamp: Date.now(),
+                    },
+                ],
+            },
+        ],
     },
     {
         id: "2",

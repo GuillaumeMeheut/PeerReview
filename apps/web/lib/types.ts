@@ -36,6 +36,10 @@ export interface InlineComment {
     text: string;
     severity: Severity;
     timestamp: number;
+    author?: {
+        name: string;
+        avatar: string;
+    };
 }
 
 export interface ExpectedIssue {
@@ -88,4 +92,17 @@ export interface PullRequest {
     files: DiffFile[];
     feedback: ReviewFeedback;
     discussions: Discussion[];
+    solutions?: Solution[];
+}
+
+export interface Solution {
+    id: string;
+    author: {
+        name: string;
+        avatar: string;
+    };
+    description: string; // "Added caching layer..."
+    upvotes: number;
+    comments: InlineComment[]; // The review comments associated with this solution
+    timestamp: number;
 }

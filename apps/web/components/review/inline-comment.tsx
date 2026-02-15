@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { User, Pencil, Trash2 } from "lucide-react";
 import type { InlineComment, Severity } from "@/lib/types";
 
@@ -115,11 +115,16 @@ export function InlineCommentThread({
             <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-5 w-5">
+                        {comment.author ? (
+                            <AvatarImage src={comment.author.avatar} />
+                        ) : null}
                         <AvatarFallback className="text-[10px] bg-muted">
-                            <User className="h-3 w-3" />
+                            {comment.author ? comment.author.name[0] : <User className="h-3 w-3" />}
                         </AvatarFallback>
                     </Avatar>
-                    <span className="text-xs font-medium">You</span>
+                    <span className="text-xs font-medium">
+                        {comment.author ? comment.author.name : "You"}
+                    </span>
                     <Badge
                         variant="outline"
                         className={`text-[10px] px-1.5 py-0 h-4 ${comment.severity === "critical"
