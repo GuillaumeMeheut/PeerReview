@@ -27,29 +27,25 @@ export function PRCard({ pr }: { pr: PullRequest }) {
     return (
         <Link href={`/review/${pr.id}`} className="block group">
             <Card className="h-full border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-lg hover:shadow-black/5">
-                <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <GitPullRequest className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <CardTitle className="text-sm font-medium leading-tight truncate">
-                                {pr.title}
-                            </CardTitle>
-                        </div>
-                        <Badge
-                            variant="outline"
-                            className={`shrink-0 text-xs font-medium ${difficultyColors[pr.difficulty]}`}
-                        >
-                            {pr.difficulty}
-                        </Badge>
-                    </div>
+                <CardHeader className="grid grid-cols-[16px_1fr] items-center gap-2.5">
+                    <GitPullRequest className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <CardTitle className="text-sm font-medium leading-tight  cursor-default min-w-0">
+                        {pr.title}
+                    </CardTitle>
                 </CardHeader>
 
                 <CardContent className="pb-3 space-y-3">
-                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-6">
                         {pr.description}
                     </p>
 
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <Badge
+                            variant="outline"
+                            className={`shrink-0 text-xs font-medium px-2 py-0.5 border-0 ${difficultyColors[pr.difficulty]}`}
+                        >
+                            {pr.difficulty}
+                        </Badge>
                         <span className="flex items-center gap-1">
                             <span className="text-emerald-400">+{totalAdditions}</span>
                             <span className="text-red-400">-{totalDeletions}</span>

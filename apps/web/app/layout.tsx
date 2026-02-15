@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Providers } from "@/components/providers";
+import { Navbar } from "@/components/navbar";
 import "@workspace/ui/globals.css";
 
 export const metadata: Metadata = {
@@ -30,7 +31,10 @@ export default function RootLayout({
                 className="min-h-screen bg-background text-foreground antialiased"
                 style={{ fontFamily: "'Inter', sans-serif" }}
             >
-                <Providers>{children}</Providers>
+                <Providers>
+                    <Navbar />
+                    {children}
+                </Providers>
             </body>
         </html>
     );

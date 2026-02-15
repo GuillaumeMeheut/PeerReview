@@ -127,8 +127,8 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                             {!submitted && <Lock className="h-3 w-3" />}
                             Feedback
                         </TabsTrigger>
-                        <TabsTrigger value="discussions" disabled className="gap-1.5">
-                            <Lock className="h-3 w-3" />
+                        <TabsTrigger value="discussions" className="gap-1.5">
+                            <MessageSquare className="h-3 w-3" />
                             Discussions
                         </TabsTrigger>
                         <TabsTrigger value="solutions" disabled className="gap-1.5">
