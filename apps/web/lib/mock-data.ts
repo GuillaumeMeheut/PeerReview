@@ -242,6 +242,55 @@ export const pullRequests: PullRequest[] = [
             seniorExample:
                 "The refactoring direction is solid — extracting the fetch logic into a hook follows SRP well. However, there are a few issues:\n\n1. **Type safety**: `catch (err: any)` should be `catch (err: unknown)` with proper type narrowing: `err instanceof Error ? err.message : 'Unknown error'`.\n\n2. **Null guard removed**: The original had `if (!user) return null` which protected downstream components. Now `UserAvatar` and `UserStats` receive a potentially null `user`. Either add the guard back or make the child components handle null.\n\n3. **Race condition**: If `userId` changes rapidly, stale responses could overwrite fresh ones. Consider an AbortController or a ref-based cleanup.\n\n4. **Minor**: The inline prop type `{ userId: string }` works but a named interface is better for documentation and reuse across tests.\n\nOverall: Approve with requested changes on items 1 and 2.",
         },
+        discussions: [
+            {
+                id: "d1",
+                author: {
+                    name: "Sarah Chen",
+                    avatar: "https://i.pravatar.cc/150?u=sarah",
+                },
+                content:
+                    "I think we should consider using React Query for this instead of a custom hook. It handles loading, error, and caching much better.",
+                timestamp: Date.now() - 1000 * 60 * 60 * 2, // 2 hours ago
+                upvotes: 5,
+                replyCount: 2,
+                replies: [
+                    {
+                        id: "r1",
+                        author: {
+                            name: "Alex Chen",
+                            avatar: "https://i.pravatar.cc/150?u=alex",
+                        },
+                        content:
+                            "That's a good point, but I wanted to avoid adding another dependency for now. Maybe we can switch later if the requirements grow?",
+                        timestamp: Date.now() - 1000 * 60 * 60 * 1.5,
+                    },
+                    {
+                        id: "r2",
+                        author: {
+                            name: "Sarah Chen",
+                            avatar: "https://i.pravatar.cc/150?u=sarah",
+                        },
+                        content:
+                            "Fair enough. Just keep an eye on the caching complexity as we scale.",
+                        timestamp: Date.now() - 1000 * 60 * 60 * 1,
+                    },
+                ],
+            },
+            {
+                id: "d2",
+                author: {
+                    name: "Mike Ross",
+                    avatar: "https://i.pravatar.cc/150?u=mike",
+                },
+                content:
+                    "Great refactor! One small suggestion: let's move the types to a separate file so they can be shared easily.",
+                timestamp: Date.now() - 1000 * 60 * 60 * 5, // 5 hours ago
+                upvotes: 2,
+                replyCount: 0,
+                replies: [],
+            },
+        ],
     },
     {
         id: "2",
@@ -505,6 +554,7 @@ export const pullRequests: PullRequest[] = [
             seniorExample:
                 "This PR has a good foundation — cache + retry is a common and valuable pattern. But there are several production-readiness issues:\n\n1. **Unbounded cache**: The `Map` cache has no eviction policy or max size. In production, this will grow indefinitely. Add either an LRU eviction policy or a max entry count.\n\n2. **Cache key design**: Using just the endpoint string as cache key is fragile. It should include query parameters, and potentially headers that affect response content (like `Accept-Language`).\n\n3. **Retry scope**: `withRetry` retries on ALL errors. It should only retry on network errors and 5xx responses. Add: `if (axios.isAxiosError(err) && err.response && err.response.status < 500) throw err;`\n\n4. **Breaking change**: `apiPost` was removed. If any module imports it, this PR breaks them. Either keep it, or this PR should update all callers.\n\n5. **Testing**: The singleton `apiCache` leaks state between tests. The `beforeEach(() => apiCache.clear())` is a workaround but fragile. Consider injecting the cache dependency.\n\nRequest changes on items 1, 3, and 4. The rest are improvements for a follow-up.",
         },
+        discussions: [],
     },
 ];
 

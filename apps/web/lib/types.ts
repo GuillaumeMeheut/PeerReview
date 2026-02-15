@@ -45,6 +45,29 @@ export interface ExpectedIssue {
     line?: string;
 }
 
+export interface DiscussionReply {
+    id: string;
+    author: {
+        name: string;
+        avatar: string;
+    };
+    content: string;
+    timestamp: number;
+}
+
+export interface Discussion {
+    id: string;
+    author: {
+        name: string;
+        avatar: string;
+    };
+    content: string;
+    timestamp: number;
+    upvotes: number;
+    replyCount: number;
+    replies: DiscussionReply[];
+}
+
 export interface ReviewFeedback {
     score: number;
     expectedIssues: ExpectedIssue[];
@@ -64,4 +87,5 @@ export interface PullRequest {
     headBranch: string;
     files: DiffFile[];
     feedback: ReviewFeedback;
+    discussions: Discussion[];
 }

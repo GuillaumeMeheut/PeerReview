@@ -7,6 +7,7 @@ import { FileTree } from "./file-tree";
 import { DiffViewer } from "./diff-viewer";
 import { SubmitReview } from "./submit-review";
 import { FeedbackTab } from "./feedback-tab";
+import { DiscussionTab } from "./discussion-tab";
 import { GitPullRequest, ArrowLeft, MessageSquare, Lock } from "lucide-react";
 import {
     Tabs,
@@ -14,7 +15,7 @@ import {
     TabsTrigger,
     TabsContent,
 } from "@workspace/ui/components/tabs";
-import type { PullRequest, InlineComment, Severity } from "@/lib/types";
+import type { PullRequest, InlineComment, Severity, Discussion, DiscussionReply } from "@/lib/types";
 
 export function ReviewClient({ pr }: { pr: PullRequest }) {
     const [comments, setComments] = useState<Map<string, InlineComment>>(
@@ -23,6 +24,9 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
     const [activeFileIndex, setActiveFileIndex] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState("review");
     const [submitted, setSubmitted] = useState(false);
+    const [discussions, setDiscussions] = useState<Discussion[]>(
+        pr.discussions || []
+    );
     const fileRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
     const handleAddComment = useCallback(
@@ -79,6 +83,54 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
         setActiveTab("feedback");
     }, []);
 
+    const handleUpvote = useCallback((id: string) => {
+        setDiscussions((prev) =>
+            prev.map((d) =>
+                d.id === id ? { ...d, upvotes: d.upvotes + 1 } : d
+            )
+        );
+    }, []);
+
+    const handleReply = useCallback((discussionId: string, content: string) => {
+        setDiscussions((prev) =>
+            prev.map((d) => {
+                if (d.id === discussionId) {
+                    const newReply: DiscussionReply = {
+                        id: `r-${Date.now()}`,
+                        author: {
+                            name: "You",
+                            avatar: "https://github.com/shadcn.png",
+                        },
+                        content,
+                        timestamp: Date.now(),
+                    };
+                    return {
+                        ...d,
+                        replies: [...(d.replies || []), newReply],
+                        replyCount: d.replyCount + 1,
+                    };
+                }
+                return d;
+            })
+        );
+    }, []);
+
+    const handleAddDiscussion = useCallback((content: string) => {
+        const newDiscussion: Discussion = {
+            id: `d-${Date.now()}`,
+            author: {
+                name: "You",
+                avatar: "https://github.com/shadcn.png",
+            },
+            content,
+            timestamp: Date.now(),
+            upvotes: 0,
+            replyCount: 0,
+            replies: [],
+        };
+        setDiscussions((prev) => [newDiscussion, ...prev]);
+    }, []);
+
     return (
         <div className="min-h-screen">
             {/* Header */}
@@ -116,8 +168,12 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList variant="line" className="border-b border-border/30 w-full justify-start">
                         <TabsTrigger value="review" className="gap-1.5">
-                            <MessageSquare className="h-3.5 w-3.5" />
+                            <GitPullRequest className="h-3.5 w-3.5" />
                             My Review
+                        </TabsTrigger>
+                        <TabsTrigger value="discussions" className="gap-1.5">
+                            <MessageSquare className="h-3 w-3" />
+                            Discussions
                         </TabsTrigger>
                         <TabsTrigger
                             value="feedback"
@@ -127,10 +183,7 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                             {!submitted && <Lock className="h-3 w-3" />}
                             Feedback
                         </TabsTrigger>
-                        <TabsTrigger value="discussions" className="gap-1.5">
-                            <MessageSquare className="h-3 w-3" />
-                            Discussions
-                        </TabsTrigger>
+
                         <TabsTrigger value="solutions" disabled className="gap-1.5">
                             <Lock className="h-3 w-3" />
                             Solutions
@@ -171,20 +224,19 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                         </div>
                     </TabsContent>
 
+                    {/* Discussions Tab */}
+                    <TabsContent value="discussions">
+                        <DiscussionTab
+                            discussions={discussions}
+                            onUpvote={handleUpvote}
+                            onReply={handleReply}
+                            onAddDiscussion={handleAddDiscussion}
+                        />
+                    </TabsContent>
+
                     {/* Feedback Tab */}
                     <TabsContent value="feedback">
                         {submitted && <FeedbackTab feedback={pr.feedback} />}
-                    </TabsContent>
-
-                    {/* Discussions Tab (placeholder) */}
-                    <TabsContent value="discussions">
-                        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                            <Lock className="h-8 w-8 mb-3 opacity-40" />
-                            <p className="text-sm font-medium">Coming soon</p>
-                            <p className="text-xs mt-1 opacity-60">
-                                Discuss the PR with other reviewers
-                            </p>
-                        </div>
                     </TabsContent>
 
                     {/* Solutions Tab (placeholder) */}
