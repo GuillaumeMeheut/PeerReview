@@ -4,131 +4,13 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
+import { Highlight, themes } from "prism-react-renderer";
 import {
     InlineCommentEditor,
     InlineCommentThread,
 } from "./inline-comment";
 import type { DiffFile, InlineComment, Severity } from "@/lib/types";
-
-// Basic syntax highlighting for TypeScript/JavaScript
-function highlightSyntax(content: string): React.ReactNode {
-    if (!content.trim()) return content;
-
-    const keywords =
-        /\b(import|export|from|const|let|var|function|return|if|else|try|catch|finally|throw|new|class|interface|type|extends|implements|async|await|for|while|do|switch|case|break|continue|default|typeof|instanceof|in|of|void|null|undefined|true|false|this|super)\b/g;
-    const strings = /(["'`])(?:(?!\1|\\).|\\.)*\1/g;
-    const comments = /(\/\/.*$|\/\*[\s\S]*?\*\/)/gm;
-    const numbers = /\b(\d+\.?\d*)\b/g;
-    const types = /\b([A-Z][a-zA-Z0-9]*(?:<[^>]+>)?)\b/g;
-
-    // Build tokens with positions
-    type Token = { start: number; end: number; type: string; text: string };
-    const tokens: Token[] = [];
-
-    let match: RegExpExecArray | null;
-
-    // Comments first (highest priority)
-    const commentRegex = new RegExp(comments.source, comments.flags);
-    while ((match = commentRegex.exec(content)) !== null) {
-        tokens.push({
-            start: match.index,
-            end: match.index + match[0].length,
-            type: "comment",
-            text: match[0],
-        });
-    }
-
-    // Strings
-    const stringRegex = new RegExp(strings.source, strings.flags);
-    while ((match = stringRegex.exec(content)) !== null) {
-        tokens.push({
-            start: match.index,
-            end: match.index + match[0].length,
-            type: "string",
-            text: match[0],
-        });
-    }
-
-    // Keywords
-    const keywordRegex = new RegExp(keywords.source, keywords.flags);
-    while ((match = keywordRegex.exec(content)) !== null) {
-        tokens.push({
-            start: match.index,
-            end: match.index + match[0].length,
-            type: "keyword",
-            text: match[0],
-        });
-    }
-
-    // Types
-    const typeRegex = new RegExp(types.source, types.flags);
-    while ((match = typeRegex.exec(content)) !== null) {
-        tokens.push({
-            start: match.index,
-            end: match.index + match[0].length,
-            type: "type",
-            text: match[0],
-        });
-    }
-
-    // Numbers
-    const numberRegex = new RegExp(numbers.source, numbers.flags);
-    while ((match = numberRegex.exec(content)) !== null) {
-        tokens.push({
-            start: match.index,
-            end: match.index + match[0].length,
-            type: "number",
-            text: match[0],
-        });
-    }
-
-    // Remove overlapping tokens (higher priority wins)
-    tokens.sort((a, b) => a.start - b.start);
-    const filtered: Token[] = [];
-    let lastEnd = 0;
-    for (const token of tokens) {
-        if (token.start >= lastEnd) {
-            filtered.push(token);
-            lastEnd = token.end;
-        }
-    }
-
-    // Build result
-    const result: React.ReactNode[] = [];
-    let pos = 0;
-
-    for (const token of filtered) {
-        if (token.start > pos) {
-            result.push(content.slice(pos, token.start));
-        }
-
-        const colorClass =
-            token.type === "keyword"
-                ? "text-purple-400"
-                : token.type === "string"
-                    ? "text-emerald-400"
-                    : token.type === "comment"
-                        ? "text-muted-foreground/60 italic"
-                        : token.type === "type"
-                            ? "text-amber-300"
-                            : token.type === "number"
-                                ? "text-blue-400"
-                                : "";
-
-        result.push(
-            <span key={`${token.start}-${token.type}`} className={colorClass}>
-                {token.text}
-            </span>
-        );
-        pos = token.end;
-    }
-
-    if (pos < content.length) {
-        result.push(content.slice(pos));
-    }
-
-    return result;
-}
+import { getLanguageFromFilename } from "@/lib/utils";
 
 interface DiffViewerProps {
     files: DiffFile[];
@@ -194,6 +76,8 @@ export function DiffViewer({
                 const parts = file.path.split("/");
                 const fileName = parts.pop();
                 const dirPath = parts.join("/");
+
+                const language = getLanguageFromFilename(fileName);
 
                 return (
                     <div
@@ -325,7 +209,23 @@ export function DiffViewer({
 
                                                         {/* Code content */}
                                                         <div className="flex-1 py-0.5 pr-4 whitespace-pre overflow-x-auto">
-                                                            {highlightSyntax(line.content)}
+                                                            <Highlight
+                                                                theme={themes.vsDark}
+                                                                code={line.content || " "}
+                                                                language={language}
+                                                            >
+                                                                {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                                                                    <span style={{ ...style, backgroundColor: "transparent" }}>
+                                                                        {tokens.map((line, i) => (
+                                                                            <span key={i} {...getLineProps({ line })}>
+                                                                                {line.map((token, key) => (
+                                                                                    <span key={key} {...getTokenProps({ token })} />
+                                                                                ))}
+                                                                            </span>
+                                                                        ))}
+                                                                    </span>
+                                                                )}
+                                                            </Highlight>
                                                         </div>
                                                     </div>
 

@@ -345,6 +345,10 @@ export const pullRequests: PullRequest[] = [
                         text: "Consider replacing this whole hook with `useQuery` from React Query.",
                         severity: "suggestion",
                         timestamp: Date.now(),
+                        author: {
+                            name: "Emily White",
+                            avatar: "https://i.pravatar.cc/150?u=emily",
+                        },
                     },
                 ],
             },

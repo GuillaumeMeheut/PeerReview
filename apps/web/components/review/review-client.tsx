@@ -17,6 +17,7 @@ import {
     TabsContent,
 } from "@workspace/ui/components/tabs";
 import type { PullRequest, InlineComment, Severity, Discussion, DiscussionReply } from "@/lib/types";
+import { Button } from "@workspace/ui/components/button";
 
 export function ReviewClient({ pr }: { pr: PullRequest }) {
     const [comments, setComments] = useState<Map<string, InlineComment>>(
@@ -188,9 +189,17 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                         {pr.title}
                     </span>
                     {activeSolution && (
-                        <div className="ml-auto flex items-center gap-2 bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-xs font-medium border border-blue-500/20">
-                            <Lock className="w-3 h-3" />
-                            Viewing Solution by {activeSolution.author.name}
+                        <div className="ml-auto flex items-center gap-3">
+                            <div className="flex items-center gap-2 bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-xs font-medium border border-blue-500/20">
+                                <Lock className="w-3 h-3" />
+                                Viewing Solution by {activeSolution.author.name}
+                            </div>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setActiveSolutionId(null)}
+                            >
+                                Return to your review
+                            </Button>
                         </div>
                     )}
                 </div>
@@ -273,9 +282,6 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                                     <div className="flex items-center justify-center p-8 bg-muted/20 border border-dashed border-border rounded-lg">
                                         <p className="text-muted-foreground text-sm">
                                             You are viewing a reference solution.
-                                            <button onClick={() => setActiveSolutionId(null)} className="ml-1 text-primary hover:underline">
-                                                Return to your review
-                                            </button>
                                         </p>
                                     </div>
                                 )}
