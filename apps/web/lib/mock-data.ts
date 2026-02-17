@@ -1,4 +1,4 @@
-import type { PullRequest, Discussion, Solution, InlineComment } from "./types";
+import type { PullRequest, Discussion, Solution, InlineComment, ReviewFeedback } from "./types";
 
 export const pullRequests: PullRequest[] = [
     {
@@ -622,6 +622,11 @@ export const pullRequests: PullRequest[] = [
 
 export function getPullRequest(id: string): PullRequest | undefined {
     return pullRequests.find((pr) => pr.id === id);
+}
+
+export function getFeedback(id: string): ReviewFeedback | undefined {
+    const pr = pullRequests.find((pr) => pr.id === id);
+    return pr?.feedback;
 }
 
 export function getPRDiscussions(id: string): Discussion[] {
