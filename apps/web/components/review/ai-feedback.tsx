@@ -113,32 +113,36 @@ export function AIFeedback({ prId }: AIFeedbackProps) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col items-center justify-center text-center gap-4">
-                <div>
-                    <h3 className="text-lg font-medium flex items-center justify-center gap-2">
-                        <Sparkles className="h-5 w-5 text-indigo-500" />
-                        AI Review Coach
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                        Get personalized coaching on your code review skills.
-                    </p>
-                </div>
-                {!feedback && !isLoading && (
-                    <Button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Analyze My Review
-                    </Button>
-                )}
-            </div>
-
-            {isLoading && (
-                <div className="flex flex-col items-center justify-center py-12 space-y-4 border rounded-lg bg-card/50">
-                    <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-                    <div className="text-center space-y-1">
-                        <p className="font-medium">Analyzing your review...</p>
-                        <p className="text-xs text-muted-foreground">Evaluating tone, accuracy, and constructive feedback</p>
-                    </div>
-                </div>
+            {!feedback && (
+                <Card className="border-indigo-100 dark:border-indigo-900 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-card">
+                    <CardContent className="pt-6 flex flex-col items-center justify-center text-center gap-4 min-h-[200px]">
+                        {!isLoading ? (
+                            <>
+                                <div>
+                                    <h3 className="text-lg font-medium flex items-center justify-center gap-2">
+                                        <Sparkles className="h-5 w-5 text-indigo-500" />
+                                        AI Review Coach
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Get personalized coaching on your code review skills.
+                                    </p>
+                                </div>
+                                <Button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                    <Sparkles className="mr-2 h-4 w-4" />
+                                    Analyze My Review
+                                </Button>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center space-y-4">
+                                <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+                                <div className="text-center space-y-1">
+                                    <p className="font-medium">Analyzing your review...</p>
+                                    <p className="text-xs text-muted-foreground">Evaluating tone, accuracy, and constructive feedback</p>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             )}
 
             {feedback && (
