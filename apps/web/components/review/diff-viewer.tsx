@@ -23,7 +23,7 @@ interface DiffViewerProps {
     ) => void;
     onEditComment?: (commentKey: string, newText: string, newSeverity: Severity) => void;
     onDeleteComment?: (commentKey: string) => void;
-    fileRefs: React.MutableRefObject<Map<number, HTMLDivElement | null>>;
+    fileRefs: React.RefObject<Map<number, HTMLDivElement | null>>;
     readOnly?: boolean;
 }
 
