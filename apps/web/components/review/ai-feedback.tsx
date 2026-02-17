@@ -13,7 +13,8 @@ import {
     XCircle,
     AlertCircle,
     BarChart3,
-    Trophy
+    Trophy,
+    MessageSquareQuote
 } from "lucide-react";
 import { InlineComment } from "@/lib/types";
 
@@ -36,6 +37,12 @@ interface StructuredFeedback {
     improvements: string[];
     metrics: FeedbackMetrics;
     overallScore: number;
+    commentFeedback?: {
+        commentId: string;
+        feedback: string;
+        rating: number;
+        category: "helpful" | "nitpick" | "incorrect" | "neutral";
+    }[];
 }
 
 export function AIFeedback({ prId }: AIFeedbackProps) {
@@ -154,22 +161,22 @@ export function AIFeedback({ prId }: AIFeedbackProps) {
                                         <Gauge
                                             value={feedback.metrics.technical_accuracy}
                                             label="Accuracy"
-                                            size="sm"
+                                            size="md"
                                         />
                                         <Gauge
                                             value={feedback.metrics.communication_style}
                                             label="Communication"
-                                            size="sm"
+                                            size="md"
                                         />
                                         <Gauge
                                             value={feedback.metrics.constructiveness}
                                             label="Constructive"
-                                            size="sm"
+                                            size="md"
                                         />
                                         <Gauge
                                             value={feedback.metrics.completeness}
                                             label="Completeness"
-                                            size="sm"
+                                            size="md"
                                         />
                                     </div>
                                 </div>
@@ -218,6 +225,73 @@ export function AIFeedback({ prId }: AIFeedbackProps) {
                             </CardContent>
                         </Card>
                     </div>
+
+                    {/* Comment Analysis */}
+                    {feedback.commentFeedback && feedback.commentFeedback.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <MessageSquareQuote className="h-5 w-5 text-indigo-500" />
+                                    Comment Analysis
+                                </CardTitle>
+                                <CardDescription>
+                                    Detailed feedback on your specific comments
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {feedback.commentFeedback.map((item) => {
+                                    const userCommentEntry = comments.find(([_, c]) => c.id === item.commentId);
+                                    if (!userCommentEntry) return null;
+                                    const userComment = userCommentEntry[1];
+
+                                    return (
+                                        <div key={item.commentId} className="p-4 rounded-lg bg-muted/50 border space-y-3">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="space-y-1 flex-1">
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                        <Badge variant="outline">
+                                                            Line {userComment.lineIndex}
+                                                        </Badge>
+                                                        <Badge variant={
+                                                            userComment.severity === 'critical' ? 'destructive' :
+                                                                userComment.severity === 'suggestion' ? 'default' : 'secondary'
+                                                        }>
+                                                            {userComment.severity}
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="font-medium text-sm italic border-l-2 border-muted-foreground/30 pl-3 py-1 my-2">
+                                                        "{userComment.text}"
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-col items-center gap-1 shrink-0">
+                                                    <span className="text-xl font-bold text-indigo-600">{item.rating}</span>
+                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Score</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2 border-t border-border/50">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <Badge variant={
+                                                        item.category === 'helpful' ? 'default' :
+                                                            item.category === 'nitpick' ? 'secondary' :
+                                                                item.category === 'incorrect' ? 'destructive' : 'outline'
+                                                    } className={
+                                                        item.category === 'helpful' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100' : ''
+                                                    }>
+                                                        {item.category}
+                                                    </Badge>
+                                                    <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">AI Feedback</span>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {item.feedback}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </CardContent>
+                        </Card>
+                    )}
 
                     <div className="flex justify-center">
                         <Button variant="outline" onClick={handleGenerate} className="text-muted-foreground">

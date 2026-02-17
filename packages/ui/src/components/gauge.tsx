@@ -44,20 +44,20 @@ export function Gauge({ value, max = 10, label, className, showValue = true, siz
 
     const sizeClasses = {
         sm: "h-[80px] w-[80px]",
-        md: "h-[150px] w-[150px]",
+        md: "h-[100px] w-[100px]",
         lg: "h-[200px] w-[200px]",
     }
 
     const fontSizeClasses = {
         sm: "text-lg",
-        md: "text-3xl",
+        md: "text-2xl",
         lg: "text-4xl"
     }
 
     const labelOffset = {
-        sm: 10,
-        md: 16,
-        lg: 20
+        sm: 12,
+        md: 20,
+        lg: 24
     }
 
     return (
