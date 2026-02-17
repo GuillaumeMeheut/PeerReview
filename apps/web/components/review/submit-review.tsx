@@ -9,10 +9,9 @@ interface SubmitReviewProps {
     comments: Map<string, InlineComment>;
     files: DiffFile[];
     prId: string;
-    onSubmit: () => void;
 }
 
-export function SubmitReview({ comments, files, prId, onSubmit }: SubmitReviewProps) {
+export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
     const router = useRouter();
     const commentArray = Array.from(comments.values());
     const totalComments = commentArray.length;
@@ -30,7 +29,6 @@ export function SubmitReview({ comments, files, prId, onSubmit }: SubmitReviewPr
         // Persist full comment map entries for the read-only view
         const entries = Array.from(comments.entries());
         localStorage.setItem(`review-comments-${prId}`, JSON.stringify(entries));
-        onSubmit();
         router.push(`/review/${prId}/feedback`);
     };
 

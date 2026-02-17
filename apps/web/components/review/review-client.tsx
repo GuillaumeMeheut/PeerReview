@@ -105,11 +105,6 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
         }
     }, []);
 
-    const handleSubmitReview = useCallback(() => {
-        // Logic for submission can be added here or passed as prop
-        // For now, just log or set a state if needed, but navigation is handled by Layout/Tabs
-        console.log("Review submitted!");
-    }, []);
 
     // RENDER
     return (
@@ -143,7 +138,6 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
                         comments={comments}
                         files={pr.files}
                         prId={pr.id}
-                        onSubmit={handleSubmitReview}
                     />
                 )}
                 {readOnly && (
