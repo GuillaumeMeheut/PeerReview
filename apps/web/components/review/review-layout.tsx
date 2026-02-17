@@ -66,17 +66,18 @@ export function ReviewLayout({
                         label="My Review"
                     />
                     <TabLink
-                        href={`${baseUrl}/discussions`}
-                        isActive={isActive(`${baseUrl}/discussions`)}
-                        icon={<MessageSquare className="h-3 w-3" />}
-                        label="Discussions"
-                    />
-                    <TabLink
                         href={`${baseUrl}/feedback`}
                         isActive={isActive(`${baseUrl}/feedback`)}
                         icon={<Sparkles className="h-3 w-3" />}
                         label="Feedback"
                     />
+                    <TabLink
+                        href={`${baseUrl}/discussions`}
+                        isActive={isActive(`${baseUrl}/discussions`)}
+                        icon={<MessageSquare className="h-3 w-3" />}
+                        label="Discussions"
+                    />
+
                     <TabLink
                         href={`${baseUrl}/solutions`}
                         isActive={isActive(`${baseUrl}/solutions`)}
