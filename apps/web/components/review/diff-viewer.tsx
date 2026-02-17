@@ -156,10 +156,10 @@ export function DiffViewer({
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     onClick={() => setActiveEditor(lineKey)}
-                                                                    className="absolute inset-0 h-auto w-auto text-blue-400 hover:text-blue-300 hover:bg-transparent z-10"
+                                                                    className="absolute inset-0 h-full w-full rounded-none text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 z-10 transition-colors"
                                                                     title="Add comment"
                                                                 >
-                                                                    <Plus className="h-3.5 w-3.5" />
+                                                                    <Plus className="h-4 w-4" />
                                                                 </Button>
                                                             )}
                                                         </div>
