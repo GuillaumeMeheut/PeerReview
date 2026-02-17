@@ -26,7 +26,7 @@ export default async function FeedbackPage({ params }: { params: Params }) {
     return (
         <div className="space-y-8">
             <AIFeedback prId={id} />
-            <FeedbackTab feedback={feedback} />
+            {/* <FeedbackTab feedback={feedback} /> */}
         </div>
     );
 }

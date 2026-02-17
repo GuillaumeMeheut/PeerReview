@@ -106,9 +106,9 @@ export function AIFeedback({ prId }: AIFeedbackProps) {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-center justify-center text-center gap-4">
                 <div>
-                    <h3 className="text-lg font-medium flex items-center gap-2">
+                    <h3 className="text-lg font-medium flex items-center justify-center gap-2">
                         <Sparkles className="h-5 w-5 text-indigo-500" />
                         AI Review Coach
                     </h3>
