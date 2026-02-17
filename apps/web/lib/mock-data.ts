@@ -1,4 +1,4 @@
-import type { PullRequest, Discussion, Solution } from "./types";
+import type { PullRequest, Discussion, Solution, InlineComment } from "./types";
 
 export const pullRequests: PullRequest[] = [
     {
@@ -632,4 +632,14 @@ export function getPRDiscussions(id: string): Discussion[] {
 export function getPRSolutions(id: string): Solution[] {
     const pr = pullRequests.find((pr) => pr.id === id);
     return pr?.solutions || [];
+}
+
+export function getSolutionComments(solutionId: string): InlineComment[] | undefined {
+    for (const pr of pullRequests) {
+        const solution = pr.solutions?.find((s) => s.id === solutionId);
+        if (solution?.comments) {
+            return solution.comments;
+        }
+    }
+    return undefined;
 }

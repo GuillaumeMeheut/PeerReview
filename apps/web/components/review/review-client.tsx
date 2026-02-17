@@ -1,67 +1,30 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import Link from "next/link";
-import { PRContext } from "./pr-context";
 import { FileTree } from "./file-tree";
 import { DiffViewer } from "./diff-viewer";
 import { SubmitReview } from "./submit-review";
-import { FeedbackTab } from "./feedback-tab";
-import { DiscussionTab } from "./discussion-tab";
-import { SolutionsTab } from "./solutions-tab";
-import { GitPullRequest, ArrowLeft, MessageSquare, Lock } from "lucide-react";
-import {
-    Tabs,
-    TabsList,
-    TabsTrigger,
-    TabsContent,
-} from "@workspace/ui/components/tabs";
 import type { PullRequest, InlineComment, Severity } from "@/lib/types";
-import { Button } from "@workspace/ui/components/button";
 
 type ReviewClientProps = {
     pr: PullRequest;
-}
+    readOnly?: boolean;
+    initialComments?: InlineComment[];
+};
 
-export function ReviewClient({ pr }: ReviewClientProps) {
-    const [comments, setComments] = useState<Map<string, InlineComment>>(
-        new Map()
-    );
-    const [activeSolutionId, setActiveSolutionId] = useState<string | null>(null);
+export function ReviewClient({ pr, readOnly = false, initialComments = [] }: ReviewClientProps) {
+    const [comments, setComments] = useState<Map<string, InlineComment>>(() => {
+        const map = new Map<string, InlineComment>();
+        initialComments.forEach(c => map.set(`${c.fileIndex}-0-${c.lineIndex}`, c));
+        return map;
+    });
+
     const [activeFileIndex, setActiveFileIndex] = useState<number | null>(null);
-    const [activeTab, setActiveTab] = useState("review");
-    const [submitted, setSubmitted] = useState(false);
-
     const fileRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
-
-    // Derived state for comments
-    const activeSolution = activeSolutionId
-        ? pr.solutions?.find(s => s.id === activeSolutionId)
-        : null;
-
-    const displayedComments = activeSolutionId && activeSolution
-        ? new Map(activeSolution.comments.map(c => [`${c.fileIndex}-0-${c.lineIndex}`, c]))
-        : comments;
-
-    // Reset solution view when switching tab to "review" manually
-    const handleTabChange = (value: string) => {
-        if (value === "review" && activeSolutionId) {
-            setActiveSolutionId(null);
-        }
-        setActiveTab(value);
-    };
-
-    const handleSelectSolution = useCallback((solutionId: string) => {
-        setActiveSolutionId(solutionId);
-        setActiveTab("review");
-    }, []);
-
-    // Read-only logic: disable editing if viewing a solution
-    const isReadOnly = !!activeSolutionId;
 
     const handleAddComment = useCallback(
         (fileIndex: number, lineIndex: number, text: string, severity: Severity) => {
-            if (isReadOnly) return;
+            if (readOnly) return;
             const key = `${fileIndex}-0-${lineIndex}`;
             setComments((prev) => {
                 const next = new Map(prev);
@@ -76,12 +39,12 @@ export function ReviewClient({ pr }: ReviewClientProps) {
                 return next;
             });
         },
-        [isReadOnly]
+        [readOnly]
     );
 
     const handleEditComment = useCallback(
         (commentKey: string, newText: string, newSeverity: Severity) => {
-            if (isReadOnly) return;
+            if (readOnly) return;
             setComments((prev) => {
                 const next = new Map(prev);
                 const comment = next.get(commentKey);
@@ -91,17 +54,17 @@ export function ReviewClient({ pr }: ReviewClientProps) {
                 return next;
             });
         },
-        [isReadOnly]
+        [readOnly]
     );
 
     const handleDeleteComment = useCallback((commentKey: string) => {
-        if (isReadOnly) return;
+        if (readOnly) return;
         setComments((prev) => {
             const next = new Map(prev);
             next.delete(commentKey);
             return next;
         });
-    }, [isReadOnly]);
+    }, [readOnly]);
 
     const handleFileClick = useCallback((index: number) => {
         setActiveFileIndex(index);
@@ -112,157 +75,53 @@ export function ReviewClient({ pr }: ReviewClientProps) {
     }, []);
 
     const handleSubmitReview = useCallback(() => {
-        setSubmitted(true);
-        setActiveTab("feedback");
+        // Logic for submission can be added here or passed as prop
+        // For now, just log or set a state if needed, but navigation is handled by Layout/Tabs
+        console.log("Review submitted!");
     }, []);
 
-
-
+    // RENDER
     return (
-        <div className="min-h-screen">
-            {/* Header */}
-            <header className="border-b border-border/50 sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
-                <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-4">
-                    <Link
-                        href="/"
-                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center justify-center w-6 h-6 rounded bg-foreground">
-                                <GitPullRequest className="h-3 w-3 text-background" />
-                            </div>
-                            <span
-                                className="text-sm font-semibold"
-                                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                            >
-                                PeerReview
-                            </span>
-                        </div>
-                    </Link>
-                    <span className="text-muted-foreground/30">/</span>
-                    <span className="text-sm text-muted-foreground truncate">
-                        {pr.title}
-                    </span>
-                    {activeSolution && (
-                        <div className="ml-auto flex items-center gap-3">
-                            <div className="flex items-center gap-2 bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-xs font-medium border border-blue-500/20">
-                                <Lock className="w-3 h-3" />
-                                Viewing Solution by {activeSolution.author.name}
-                            </div>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setActiveSolutionId(null)}
-                            >
-                                Return to your review
-                            </Button>
-                        </div>
-                    )}
+        <div className="flex gap-4 mt-4">
+            {/* Left: File Tree */}
+            <div className="w-72 shrink-0">
+                <div className="sticky top-20">
+                    <FileTree
+                        files={pr.files}
+                        activeFileIndex={activeFileIndex}
+                        onFileClick={handleFileClick}
+                    />
                 </div>
-            </header>
+            </div>
 
-            <div className="max-w-[1400px] mx-auto px-6 py-6 space-y-6">
-                {/* Block 1: Context */}
-                <PRContext pr={pr} />
-
-                {/* Block 2: Tabs */}
-                <Tabs value={activeTab} onValueChange={handleTabChange}>
-                    <TabsList variant="line" className="border-b border-border/30 w-full justify-start">
-                        <TabsTrigger value="review" className="gap-1.5">
-                            <GitPullRequest className="h-3.5 w-3.5" />
-                            {activeSolution ? `Solution based on ${activeSolution.author.name}` : "My Review"}
-                        </TabsTrigger>
-                        <TabsTrigger value="discussions" className="gap-1.5">
-                            <MessageSquare className="h-3 w-3" />
-                            Discussions
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="feedback"
-                            disabled={!submitted}
-                            className="gap-1.5"
-                        >
-                            {!submitted && <Lock className="h-3 w-3" />}
-                            Feedback
-                        </TabsTrigger>
-
-                        <TabsTrigger value="solutions" className="gap-1.5">
-                            {/* Remove disabled and lock icon for now to test, 
-                               or check logic if users should only see solutions after submit? 
-                               Req says "list of people that has choose to publish" 
-                               Usually this is locked until submit, but user didn't specify lock condition.
-                               I will unlock it for now as per instructions "there should be list of people..."
-                           */}
-                            <Lock className="h-3 w-3 opacity-50" />
-                            Solutions
-                        </TabsTrigger>
-                    </TabsList>
-
-                    {/* My Review Tab */}
-                    <TabsContent value="review">
-                        <div className="flex gap-4 mt-4">
-                            {/* Left: File Tree */}
-                            <div className="w-72 shrink-0">
-                                <div className="sticky top-20">
-                                    <FileTree
-                                        files={pr.files}
-                                        activeFileIndex={activeFileIndex}
-                                        onFileClick={handleFileClick}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Right: Diff Viewer */}
-                            <div className="flex-1 min-w-0 space-y-6">
-                                <div className={isReadOnly ? "pointer-events-none opacity-90" : ""}>
-                                    <DiffViewer
-                                        files={pr.files}
-                                        comments={displayedComments}
-                                        onAddComment={handleAddComment}
-                                        onEditComment={handleEditComment}
-                                        onDeleteComment={handleDeleteComment}
-                                        fileRefs={fileRefs}
-                                        readOnly={isReadOnly}
-                                    />
-                                </div>
-                                {!isReadOnly && (
-                                    <SubmitReview
-                                        comments={comments}
-                                        files={pr.files}
-                                        prId={pr.id}
-                                        onSubmit={handleSubmitReview}
-                                    />
-                                )}
-                                {isReadOnly && (
-                                    <div className="flex items-center justify-center p-8 bg-muted/20 border border-dashed border-border rounded-lg">
-                                        <p className="text-muted-foreground text-sm">
-                                            You are viewing a reference solution.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    {/* Discussions Tab */}
-                    <TabsContent value="discussions">
-                        <DiscussionTab
-                            prId={pr.id}
-                        />
-                    </TabsContent>
-
-                    {/* Feedback Tab */}
-                    <TabsContent value="feedback">
-                        {submitted && <FeedbackTab feedback={pr.feedback} />}
-                    </TabsContent>
-
-                    {/* Solutions Tab */}
-                    <TabsContent value="solutions">
-                        <SolutionsTab
-                            prId={pr.id}
-                            onSelectSolution={handleSelectSolution}
-                        />
-                    </TabsContent>
-                </Tabs>
+            {/* Right: Diff Viewer */}
+            <div className="flex-1 min-w-0 space-y-6">
+                <div className={readOnly ? "pointer-events-none opacity-90" : ""}>
+                    <DiffViewer
+                        files={pr.files}
+                        comments={comments}
+                        onAddComment={handleAddComment}
+                        onEditComment={handleEditComment}
+                        onDeleteComment={handleDeleteComment}
+                        fileRefs={fileRefs}
+                        readOnly={readOnly}
+                    />
+                </div>
+                {!readOnly && (
+                    <SubmitReview
+                        comments={comments}
+                        files={pr.files}
+                        prId={pr.id}
+                        onSubmit={handleSubmitReview}
+                    />
+                )}
+                {readOnly && (
+                    <div className="flex items-center justify-center p-8 bg-muted/20 border border-dashed border-border rounded-lg">
+                        <p className="text-muted-foreground text-sm">
+                            You are viewing a reference solution.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

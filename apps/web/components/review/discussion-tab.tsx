@@ -1,16 +1,17 @@
+"use client";
+
 import { Discussion, DiscussionReply } from "@/lib/types";
 import { useState } from "react";
 import { DiscussionRow } from "./discussion-row";
 import { NewDiscussionForm } from "./new-discussion-form";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
-import { getPRDiscussions } from "@/lib/mock-data";
 
 type DiscussionTabProps = {
-    prId: string;
+    initDiscussions: Discussion[];
 }
 
-export function DiscussionTab({ prId }: DiscussionTabProps) {
-    const [discussions, setDiscussions] = useState<Discussion[]>(() => getPRDiscussions(prId));
+export function DiscussionTab({ initDiscussions }: DiscussionTabProps) {
+    const [discussions, setDiscussions] = useState<Discussion[]>(initDiscussions);
 
     const handleUpvote = (id: string) => {
         setDiscussions((prev) =>
