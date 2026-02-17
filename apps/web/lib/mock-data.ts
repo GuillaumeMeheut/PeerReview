@@ -1,4 +1,4 @@
-import type { PullRequest } from "./types";
+import type { PullRequest, Discussion, Solution } from "./types";
 
 export const pullRequests: PullRequest[] = [
     {
@@ -622,4 +622,14 @@ export const pullRequests: PullRequest[] = [
 
 export function getPullRequest(id: string): PullRequest | undefined {
     return pullRequests.find((pr) => pr.id === id);
+}
+
+export function getPRDiscussions(id: string): Discussion[] {
+    const pr = pullRequests.find((pr) => pr.id === id);
+    return pr?.discussions || [];
+}
+
+export function getPRSolutions(id: string): Solution[] {
+    const pr = pullRequests.find((pr) => pr.id === id);
+    return pr?.solutions || [];
 }

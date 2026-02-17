@@ -16,10 +16,14 @@ import {
     TabsTrigger,
     TabsContent,
 } from "@workspace/ui/components/tabs";
-import type { PullRequest, InlineComment, Severity, Discussion, DiscussionReply } from "@/lib/types";
+import type { PullRequest, InlineComment, Severity } from "@/lib/types";
 import { Button } from "@workspace/ui/components/button";
 
-export function ReviewClient({ pr }: { pr: PullRequest }) {
+type ReviewClientProps = {
+    pr: PullRequest;
+}
+
+export function ReviewClient({ pr }: ReviewClientProps) {
     const [comments, setComments] = useState<Map<string, InlineComment>>(
         new Map()
     );
@@ -27,9 +31,7 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
     const [activeFileIndex, setActiveFileIndex] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState("review");
     const [submitted, setSubmitted] = useState(false);
-    const [discussions, setDiscussions] = useState<Discussion[]>(
-        pr.discussions || []
-    );
+
     const fileRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
     // Derived state for comments
@@ -114,53 +116,7 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
         setActiveTab("feedback");
     }, []);
 
-    const handleUpvote = useCallback((id: string) => {
-        setDiscussions((prev) =>
-            prev.map((d) =>
-                d.id === id ? { ...d, upvotes: d.upvotes + 1 } : d
-            )
-        );
-    }, []);
 
-    const handleReply = useCallback((discussionId: string, content: string) => {
-        setDiscussions((prev) =>
-            prev.map((d) => {
-                if (d.id === discussionId) {
-                    const newReply: DiscussionReply = {
-                        id: `r-${Date.now()}`,
-                        author: {
-                            name: "You",
-                            avatar: "https://github.com/shadcn.png",
-                        },
-                        content,
-                        timestamp: Date.now(),
-                    };
-                    return {
-                        ...d,
-                        replies: [...(d.replies || []), newReply],
-                        replyCount: d.replyCount + 1,
-                    };
-                }
-                return d;
-            })
-        );
-    }, []);
-
-    const handleAddDiscussion = useCallback((content: string) => {
-        const newDiscussion: Discussion = {
-            id: `d-${Date.now()}`,
-            author: {
-                name: "You",
-                avatar: "https://github.com/shadcn.png",
-            },
-            content,
-            timestamp: Date.now(),
-            upvotes: 0,
-            replyCount: 0,
-            replies: [],
-        };
-        setDiscussions((prev) => [newDiscussion, ...prev]);
-    }, []);
 
     return (
         <div className="min-h-screen">
@@ -210,7 +166,6 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                 <PRContext pr={pr} />
 
                 {/* Block 2: Tabs */}
-                {/* @ts-ignore */}
                 <Tabs value={activeTab} onValueChange={handleTabChange}>
                     <TabsList variant="line" className="border-b border-border/30 w-full justify-start">
                         <TabsTrigger value="review" className="gap-1.5">
@@ -243,7 +198,6 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                     </TabsList>
 
                     {/* My Review Tab */}
-                    {/* @ts-ignore */}
                     <TabsContent value="review">
                         <div className="flex gap-4 mt-4">
                             {/* Left: File Tree */}
@@ -290,27 +244,21 @@ export function ReviewClient({ pr }: { pr: PullRequest }) {
                     </TabsContent>
 
                     {/* Discussions Tab */}
-                    {/* @ts-ignore */}
                     <TabsContent value="discussions">
                         <DiscussionTab
-                            discussions={discussions}
-                            onUpvote={handleUpvote}
-                            onReply={handleReply}
-                            onAddDiscussion={handleAddDiscussion}
+                            prId={pr.id}
                         />
                     </TabsContent>
 
                     {/* Feedback Tab */}
-                    {/* @ts-ignore */}
                     <TabsContent value="feedback">
                         {submitted && <FeedbackTab feedback={pr.feedback} />}
                     </TabsContent>
 
                     {/* Solutions Tab */}
-                    {/* @ts-ignore */}
                     <TabsContent value="solutions">
                         <SolutionsTab
-                            solutions={pr.solutions || []}
+                            prId={pr.id}
                             onSelectSolution={handleSelectSolution}
                         />
                     </TabsContent>

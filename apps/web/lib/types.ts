@@ -91,7 +91,7 @@ export interface PullRequest {
     headBranch: string;
     files: DiffFile[];
     feedback: ReviewFeedback;
-    discussions: Discussion[];
+    discussions?: Discussion[];
     solutions?: Solution[];
 }
 
@@ -101,8 +101,8 @@ export interface Solution {
         name: string;
         avatar: string;
     };
-    description: string; // "Added caching layer..."
+    description: string;
     upvotes: number;
-    comments: InlineComment[]; // The review comments associated with this solution
+    comments: InlineComment[];
     timestamp: number;
 }
