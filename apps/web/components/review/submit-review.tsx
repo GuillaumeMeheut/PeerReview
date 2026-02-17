@@ -3,6 +3,7 @@
 import { Button } from "@workspace/ui/components/button";
 import { MessageSquare, Send } from "lucide-react";
 import type { InlineComment, DiffFile } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 interface SubmitReviewProps {
     comments: Map<string, InlineComment>;
@@ -12,6 +13,7 @@ interface SubmitReviewProps {
 }
 
 export function SubmitReview({ comments, files, prId, onSubmit }: SubmitReviewProps) {
+    const router = useRouter();
     const commentArray = Array.from(comments.values());
     const totalComments = commentArray.length;
     const criticalCount = commentArray.filter(
@@ -29,6 +31,7 @@ export function SubmitReview({ comments, files, prId, onSubmit }: SubmitReviewPr
         const entries = Array.from(comments.entries());
         localStorage.setItem(`review-comments-${prId}`, JSON.stringify(entries));
         onSubmit();
+        router.push(`/review/${prId}/feedback`);
     };
 
     return (
