@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, GitPullRequest, MessageSquare, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, GitPullRequest, MessageSquare, Sparkles, Lightbulb } from "lucide-react";
 import { PRContext } from "@/components/review/pr-context";
 import { PullRequest } from "@/lib/types";
 import { cn } from "@workspace/ui/lib/utils";
@@ -81,7 +81,7 @@ export function ReviewLayout({
                     <TabLink
                         href={`${baseUrl}/solutions`}
                         isActive={isActive(`${baseUrl}/solutions`)}
-                        icon={<Lock className="h-3 w-3 opacity-50" />}
+                        icon={<Lightbulb className="h-3 w-3" />}
                         label="Solutions"
                     />
                 </div>
