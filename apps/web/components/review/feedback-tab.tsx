@@ -203,10 +203,9 @@ export function FeedbackTab({ feedback }: FeedbackTabProps) {
                 </div>
             </section>
 
-            {/* Review Another */}
             <div className="flex justify-center pb-4">
                 <Link
-                    href="/"
+                    href="/problems"
                     className="flex items-center gap-2 px-6 py-3 bg-foreground text-background text-sm font-medium rounded-md hover:bg-foreground/90 transition-colors"
                 >
                     Review another PR

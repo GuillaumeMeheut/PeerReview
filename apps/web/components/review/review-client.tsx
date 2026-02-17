@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { FileTree } from "./file-tree";
 import { DiffViewer } from "./diff-viewer";
 import { SubmitReview } from "./submit-review";
@@ -22,6 +22,34 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
     const [activeFileIndex, setActiveFileIndex] = useState<number | null>(null);
     const fileRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
+    // Load comments from local storage on mount
+    useEffect(() => {
+        if (readOnly) return;
+        const stored = localStorage.getItem(`review-comments-${pr.id}`);
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed)) {
+                    setComments((prev) => {
+                        const next = new Map(prev);
+                        parsed.forEach(([key, value]) => {
+                            next.set(key, value);
+                        });
+                        return next;
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to parse stored comments", e);
+            }
+        }
+    }, [pr.id, readOnly]);
+
+    const saveToLocalStorage = useCallback((newComments: Map<string, InlineComment>) => {
+        if (readOnly) return;
+        const entries = Array.from(newComments.entries());
+        localStorage.setItem(`review-comments-${pr.id}`, JSON.stringify(entries));
+    }, [pr.id, readOnly]);
+
     const handleAddComment = useCallback(
         (fileIndex: number, lineIndex: number, text: string, severity: Severity) => {
             if (readOnly) return;
@@ -36,10 +64,11 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
                     severity,
                     timestamp: Date.now(),
                 });
+                saveToLocalStorage(next);
                 return next;
             });
         },
-        [readOnly]
+        [readOnly, saveToLocalStorage]
     );
 
     const handleEditComment = useCallback(
@@ -51,10 +80,11 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
                 if (comment) {
                     next.set(commentKey, { ...comment, text: newText, severity: newSeverity });
                 }
+                saveToLocalStorage(next);
                 return next;
             });
         },
-        [readOnly]
+        [readOnly, saveToLocalStorage]
     );
 
     const handleDeleteComment = useCallback((commentKey: string) => {
@@ -62,9 +92,10 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
         setComments((prev) => {
             const next = new Map(prev);
             next.delete(commentKey);
+            saveToLocalStorage(next);
             return next;
         });
-    }, [readOnly]);
+    }, [readOnly, saveToLocalStorage]);
 
     const handleFileClick = useCallback((index: number) => {
         setActiveFileIndex(index);
