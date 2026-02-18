@@ -4,9 +4,12 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@workspace/ui/components/button";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export function OAuthButtons() {
     const [loading, setLoading] = useState<"github" | "google" | null>(null);
+    const searchParams = useSearchParams();
+    const next = searchParams.get("redirectTo");
 
     const handleLogin = async (provider: "github" | "google") => {
         setLoading(provider);
@@ -14,7 +17,7 @@ export function OAuthButtons() {
         const { error } = await supabase.auth.signInWithOAuth({
             provider,
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`,
             },
         });
 

@@ -1,4 +1,5 @@
 import { getFeedback } from "@/lib/mock-data";
+import { getUser } from "@/lib/supabase/queries";
 import { FeedbackTab } from "@/components/review/feedback-tab";
 import { AIFeedback } from "@/components/review/ai-feedback";
 import { notFound } from "next/navigation";
@@ -21,11 +22,13 @@ export default async function FeedbackPage({ params }: { params: Params }) {
         return <p>You should submit a solution first</p>
     }
 
+    const { user } = await getUser();
+
     // TODO: Feedback logic needs to be updated to rely on submission state or always show?
     // For now showing the static feedback from mock data
     return (
         <div className="space-y-8">
-            <AIFeedback prId={id} />
+            <AIFeedback prId={id} isLoggedIn={!!user} />
             {/* <FeedbackTab feedback={feedback} /> */}
         </div>
     );

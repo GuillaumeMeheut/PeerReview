@@ -4,24 +4,24 @@
 import { useEffect, useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
-import { Progress } from "@workspace/ui/components/progress";
 import { Badge } from "@workspace/ui/components/badge";
 import {
     Sparkles,
     Loader2,
     CheckCircle2,
-    XCircle,
     AlertCircle,
     BarChart3,
     Trophy,
     MessageSquareQuote
 } from "lucide-react";
 import { InlineComment } from "@/lib/types";
+import { LoginModal } from "@/components/auth/login-modal";
 
 import { Gauge } from "@workspace/ui/components/gauge";
 
 interface AIFeedbackProps {
     prId: string;
+    isLoggedIn: boolean;
 }
 
 interface FeedbackMetrics {
@@ -45,11 +45,12 @@ interface StructuredFeedback {
     }[];
 }
 
-export function AIFeedback({ prId }: AIFeedbackProps) {
+export function AIFeedback({ prId, isLoggedIn }: AIFeedbackProps) {
     const [comments, setComments] = useState<[string, InlineComment][]>([]);
     const [hasCheckedStorage, setHasCheckedStorage] = useState(false);
     const [feedback, setFeedback] = useState<StructuredFeedback | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem(`review-comments-${prId}`);
@@ -67,6 +68,11 @@ export function AIFeedback({ prId }: AIFeedbackProps) {
     }, [prId]);
 
     const handleGenerate = async () => {
+        if (!isLoggedIn) {
+            setShowLoginModal(true);
+            return;
+        }
+
         if (comments.length === 0) {
             console.error("No comments found to analyze.");
             return;
@@ -113,6 +119,13 @@ export function AIFeedback({ prId }: AIFeedbackProps) {
 
     return (
         <div className="space-y-6">
+            <LoginModal
+                isOpen={showLoginModal}
+                onOpenChange={setShowLoginModal}
+                title="Sign in to use AI Coach"
+                description="Get personalized feedback on your code reviews by signing in with GitHub or Google."
+            />
+
             {!feedback && (
                 <Card className="border-indigo-100 dark:border-indigo-900 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-card">
                     <CardContent className="pt-6 flex flex-col items-center justify-center text-center gap-4 min-h-[200px]">
