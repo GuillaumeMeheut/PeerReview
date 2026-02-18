@@ -32,8 +32,10 @@ export default function RootLayout({
                 style={{ fontFamily: "'Inter', sans-serif" }}
             >
                 <Providers>
-                    <Navbar />
-                    {children}
+                    <div className="relative flex min-h-screen flex-col">
+                        <Navbar />
+                        <main className="flex flex-1 flex-col">{children}</main>
+                    </div>
                 </Providers>
             </body>
         </html>
