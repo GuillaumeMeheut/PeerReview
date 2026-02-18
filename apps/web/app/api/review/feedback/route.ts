@@ -1,5 +1,5 @@
 
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
 import { getPullRequest } from '@/lib/mock-data';
@@ -68,28 +68,30 @@ export async function POST(req: Request) {
     Give a rating out of 10.
   `;
 
-  const { object } = await generateObject({
+  const { output } = await generateText({
     model: openai('gpt-4o'),
-    schema: z.object({
-      summary: z.string(),
-      strengths: z.array(z.string()),
-      improvements: z.array(z.string()),
-      metrics: z.object({
-        technical_accuracy: z.number().min(0).max(10).describe("How accurate the technical feedback is"),
-        communication_style: z.number().min(0).max(10).describe("Tone, clarity, and empathy"),
-        constructiveness: z.number().min(0).max(10).describe("Actionable advice vs just criticism"),
-        completeness: z.number().min(0).max(10).describe("Coverage of critical issues and edge cases"),
+    output: Output.object({
+      schema: z.object({
+        summary: z.string(),
+        strengths: z.array(z.string()),
+        improvements: z.array(z.string()),
+        metrics: z.object({
+          technical_accuracy: z.number().min(0).max(10).describe("How accurate the technical feedback is"),
+          communication_style: z.number().min(0).max(10).describe("Tone, clarity, and empathy"),
+          constructiveness: z.number().min(0).max(10).describe("Actionable advice vs just criticism"),
+          completeness: z.number().min(0).max(10).describe("Coverage of critical issues and edge cases"),
+        }),
+        commentFeedback: z.array(z.object({
+          commentId: z.string(),
+          feedback: z.string().describe("Specific feedback on this comment"),
+          rating: z.number().min(1).max(10).describe("Rating for this specific comment"),
+          category: z.enum(["helpful", "nitpick", "incorrect", "neutral"]).describe("Category of the comment"),
+        })).describe("Feedback for each individual comment"),
+        overallScore: z.number().min(0).max(10),
       }),
-      commentFeedback: z.array(z.object({
-        commentId: z.string(),
-        feedback: z.string().describe("Specific feedback on this comment"),
-        rating: z.number().min(1).max(10).describe("Rating for this specific comment"),
-        category: z.enum(["helpful", "nitpick", "incorrect", "neutral"]).describe("Category of the comment"),
-      })).describe("Feedback for each individual comment"),
-      overallScore: z.number().min(0).max(10),
     }),
     prompt,
   });
 
-  return Response.json(object);
+  return Response.json(output);
 }
