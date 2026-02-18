@@ -2,6 +2,8 @@ import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { Metadata } from "next";
 import Link from "next/link";
 
+import { Suspense } from "react";
+
 export const metadata: Metadata = {
     title: "Sign Up - PeerReview",
     description: "Create your PeerReview account",
@@ -25,7 +27,9 @@ export default function SignUpPage() {
                         </Link>
                     </p>
                 </div>
-                <OAuthButtons />
+                <Suspense fallback={<div />}>
+                    <OAuthButtons />
+                </Suspense>
             </div>
         </div>
     );
