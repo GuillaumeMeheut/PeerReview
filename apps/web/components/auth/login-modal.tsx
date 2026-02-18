@@ -9,11 +9,14 @@ import {
 } from "@workspace/ui/components/dialog";
 import { OAuthButtons } from "./oauth-buttons";
 
+import { usePathname } from "next/navigation";
+
 interface LoginModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     title?: string;
     description?: string;
+    redirectUrl?: string;
 }
 
 export function LoginModal({
@@ -21,7 +24,11 @@ export function LoginModal({
     onOpenChange,
     title = "Sign in to continue",
     description = "You need to be signed in to access this feature.",
+    redirectUrl,
 }: LoginModalProps) {
+    const pathname = usePathname();
+    const next = redirectUrl || pathname;
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
@@ -30,7 +37,7 @@ export function LoginModal({
                     <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col gap-4 py-4">
-                    <OAuthButtons />
+                    <OAuthButtons nextUrl={next} />
                 </div>
             </DialogContent>
         </Dialog>

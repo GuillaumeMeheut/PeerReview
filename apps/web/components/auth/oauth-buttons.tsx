@@ -6,10 +6,14 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-export function OAuthButtons() {
+interface OAuthButtonsProps {
+    nextUrl?: string;
+}
+
+export function OAuthButtons({ nextUrl }: OAuthButtonsProps) {
     const [loading, setLoading] = useState<"github" | "google" | null>(null);
     const searchParams = useSearchParams();
-    const next = searchParams.get("redirectTo");
+    const next = nextUrl || searchParams.get("redirectTo");
 
     const handleLogin = async (provider: "github" | "google") => {
         setLoading(provider);
