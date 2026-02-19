@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPullRequest } from "@/lib/mock-data";
+import { getExercise } from "@/lib/supabase/queries";
 import { ReviewLayout } from "@/components/review/review-layout";
 
 type Params = Promise<{ id: string }>;
@@ -12,7 +12,7 @@ export default async function Layout({
     params: Params;
 }) {
     const { id } = await params;
-    const pr = getPullRequest(id);
+    const pr = await getExercise(id);
 
     if (!pr) {
         notFound();

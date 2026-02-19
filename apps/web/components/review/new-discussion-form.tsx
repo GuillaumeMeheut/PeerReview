@@ -11,8 +11,6 @@ export function NewDiscussionForm({ onAddDiscussion }: NewDiscussionFormProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const handleSubmit = async (content: string) => {
-        // Simulate network delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
         onAddDiscussion(content);
         setIsExpanded(false);
     };

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSolutionComments, getPullRequest } from "@/lib/mock-data";
+import { getExercise } from "@/lib/supabase/queries";
 import { ReviewClient } from "@/components/review/review-client";
 
 type Params = Promise<{ id: string; solutionId: string }>;
@@ -7,10 +7,11 @@ type Params = Promise<{ id: string; solutionId: string }>;
 export default async function SolutionPage({ params }: { params: Params }) {
     const { solutionId, id } = await params;
 
-    const solutionComments = getSolutionComments(solutionId);
-    const pr = getPullRequest(id);
+    // TODO: Fetch solution comments from Supabase once solution queries are implemented
+    const solutionComments: never[] = [];
+    const pr = await getExercise(id);
 
-    if (!solutionComments || !pr) {
+    if (!pr) {
         notFound();
     }
 

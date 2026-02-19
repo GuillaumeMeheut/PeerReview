@@ -1,14 +1,13 @@
-
-"use client"
-
-import { pullRequests } from "@/lib/mock-data"
+import { getExercises } from "@/lib/supabase/queries"
 import { HomeContent } from "@/components/home-content"
 
-export default function ProblemsPage() {
+//every 1 hour
+export const revalidate = 3600
+
+export default async function ProblemsPage() {
+    const exercises = await getExercises()
+
     return (
-        <div className="min-h-screen">
-            {/* Main Content */}
-            <HomeContent pullRequests={pullRequests} />
-        </div>
+        <HomeContent pullRequests={exercises} />
     )
 }

@@ -253,6 +253,7 @@ export const pullRequests: PullRequest[] = [
                     "I think we should consider using React Query for this instead of a custom hook. It handles loading, error, and caching much better.",
                 timestamp: Date.now() - 1000 * 60 * 60 * 2, // 2 hours ago
                 upvotes: 5,
+                hasUpvoted: false,
                 replyCount: 2,
                 replies: [
                     {
@@ -287,6 +288,7 @@ export const pullRequests: PullRequest[] = [
                     "Great refactor! One small suggestion: let's move the types to a separate file so they can be shared easily.",
                 timestamp: Date.now() - 1000 * 60 * 60 * 5, // 5 hours ago
                 upvotes: 2,
+                hasUpvoted: false,
                 replyCount: 0,
                 replies: [],
             },

@@ -68,6 +68,7 @@ export interface Discussion {
     content: string;
     timestamp: number;
     upvotes: number;
+    hasUpvoted: boolean;
     replyCount: number;
     replies: DiscussionReply[];
 }
