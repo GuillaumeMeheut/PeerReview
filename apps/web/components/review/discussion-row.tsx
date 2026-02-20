@@ -215,7 +215,7 @@ function ReplyRow({ reply }: { reply: DiscussionReply }) {
                         • {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
                     </span>
                 </div>
-                <p className="text-sm text-foreground/90">{reply.content}</p>
+                <p className="text-sm text-foreground/90 max-w-4xl">{reply.content}</p>
             </div>
         </div>
     );

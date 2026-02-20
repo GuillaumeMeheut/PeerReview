@@ -4,7 +4,6 @@ import { Discussion } from "@/lib/types";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { DiscussionRow } from "./discussion-row";
 import { NewDiscussionForm } from "./new-discussion-form";
-import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { createDiscussion, toggleDiscussionVote, fetchMoreDiscussions } from "@/lib/supabase/actions";
 import { LoginModal } from "@/components/auth/login-modal";
 import { Loader2 } from "lucide-react";
@@ -144,12 +143,10 @@ export function DiscussionTab({ exerciseId, initDiscussions, currentUser }: Disc
 
     return (
         <>
-            <ScrollArea className="h-[calc(100vh-200px)] pr-4">
-                <div className="space-y-6 max-w-3xl mx-auto py-4">
-                    <NewDiscussionForm onAddDiscussion={handleAddDiscussion} />
-                    {listContent}
-                </div>
-            </ScrollArea>
+            <div className="space-y-6 py-4">
+                <NewDiscussionForm onAddDiscussion={handleAddDiscussion} />
+                {listContent}
+            </div>
             <LoginModal
                 isOpen={showLoginModal}
                 onOpenChange={setShowLoginModal}

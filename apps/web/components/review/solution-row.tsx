@@ -38,7 +38,7 @@ export function SolutionRow({ solution, prId }: SolutionRowProps) {
                     </span>
                 </div>
 
-                <p className="text-sm leading-relaxed text-foreground/90">
+                <p className="text-sm leading-relaxed text-foreground/90 max-w-4xl">
                     {solution.description}
                 </p>
 
