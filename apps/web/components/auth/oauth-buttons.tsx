@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@workspace/ui/components/button";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -17,6 +17,7 @@ export function OAuthButtons({ nextUrl }: OAuthButtonsProps) {
 
     const handleLogin = async (provider: "github" | "google") => {
         setLoading(provider);
+        const supabase = createClient();
         const { error } = await supabase.auth.signInWithOAuth({
             provider,
             options: {
