@@ -15,7 +15,6 @@ import {
     MessageSquareQuote
 } from "lucide-react";
 import { LoginModal } from "@/components/auth/login-modal";
-
 import { Gauge } from "@workspace/ui/components/gauge";
 import { StructuredFeedback } from "@/lib/types";
 
@@ -259,12 +258,6 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback }: AIFe
                             </CardContent>
                         </Card>
                     )}
-
-                    <div className="flex justify-center">
-                        <Button variant="outline" onClick={handleGenerate} className="text-muted-foreground">
-                            Regenerate Analysis
-                        </Button>
-                    </div>
                 </div>
             )}
         </div>
