@@ -6,8 +6,8 @@ import { GitBranch, GitPullRequest, FileCode, User } from "lucide-react";
 import type { PullRequest } from "@/lib/types";
 
 export function PRContext({ pr }: { pr: PullRequest }) {
-    const totalAdditions = pr.files.reduce((sum, f) => sum + f.additions, 0);
-    const totalDeletions = pr.files.reduce((sum, f) => sum + f.deletions, 0);
+    const totalAdditions = pr.exercise_files.reduce((sum, f) => sum + f.additions, 0);
+    const totalDeletions = pr.exercise_files.reduce((sum, f) => sum + f.deletions, 0);
 
     return (
         <div className="border border-border/50 rounded-lg bg-card/30">
@@ -26,13 +26,13 @@ export function PRContext({ pr }: { pr: PullRequest }) {
                                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">
                                     <GitBranch className="h-3 w-3 text-blue-400" />
                                     <span className="text-blue-400 font-mono text-[11px]">
-                                        {pr.headBranch}
+                                        {pr.head_branch}
                                     </span>
                                 </div>
                                 <span className="text-muted-foreground/40">into</span>
                                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted/50 border border-border/50">
                                     <GitBranch className="h-3 w-3" />
-                                    <span className="font-mono text-[11px]">{pr.baseBranch}</span>
+                                    <span className="font-mono text-[11px]">{pr.base_branch}</span>
                                 </div>
                             </div>
                         </div>
@@ -40,10 +40,10 @@ export function PRContext({ pr }: { pr: PullRequest }) {
                     <Badge
                         variant="outline"
                         className={`shrink-0 text-xs ${pr.difficulty === "Junior"
-                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                : pr.difficulty === "Mid"
-                                    ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                    : "bg-red-500/10 text-red-400 border-red-500/20"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : pr.difficulty === "Mid"
+                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                : "bg-red-500/10 text-red-400 border-red-500/20"
                             }`}
                     >
                         {pr.difficulty}
@@ -59,7 +59,7 @@ export function PRContext({ pr }: { pr: PullRequest }) {
                 <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                         <FileCode className="h-3.5 w-3.5" />
-                        <span>{pr.files.length} files changed</span>
+                        <span>{pr.exercise_files.length} files changed</span>
                     </div>
                     <span className="text-emerald-400 font-mono">+{totalAdditions}</span>
                     <span className="text-red-400 font-mono">-{totalDeletions}</span>

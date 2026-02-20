@@ -10,13 +10,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { createClient } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { LogOut, User as UserIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export function UserNav({ user }: { user: User }) {
-    const supabase = createClient()
     const router = useRouter()
 
     const handleSignOut = async () => {

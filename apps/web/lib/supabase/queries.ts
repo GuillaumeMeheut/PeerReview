@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createClient } from "./server";
-import type { PullRequest, DiffFile, DiffChunk, DiffLine, Tag, Difficulty, Discussion, DiscussionReply } from "../types";
+import type { PullRequest, DiffFile, DiffChunk, DiffLine, Discussion, DiscussionReply, Solution, InlineComment } from "../types";
 
 // type SupabaseClient = ReturnType<typeof createClient>;
 
@@ -50,33 +50,17 @@ export const getExercises = cache(async (): Promise<PullRequest[]> => {
   }
 
   return (exercises ?? []).map((ex) => {
-    const files: DiffFile[] = (ex.exercise_files ?? [])
-      .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
-      .map((f: { path: string; additions: number; deletions: number }) => ({
-        path: f.path,
-        additions: f.additions,
-        deletions: f.deletions,
-        chunks: [], // Not loaded for listing view
+    const exercise_files: DiffFile[] = (ex.exercise_files ?? [])
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+      .map((f: any) => ({
+        ...f,
+        file_chunks: [],
       }));
 
     return {
-      id: ex.id,
-      title: ex.title,
-      description: ex.description,
-      difficulty: ex.difficulty as Difficulty,
-      techStack: ex.tech_stack,
-      tags: ex.tags as Tag[],
-      author: ex.author,
-      baseBranch: ex.base_branch,
-      headBranch: ex.head_branch,
-      files,
-      feedback: {
-        score: 0,
-        expectedIssues: [],
-        commonlyMissed: ex.commonly_missed,
-        seniorExample: ex.senior_example,
-      },
-    };
+      ...ex,
+      exercise_files,
+    } as PullRequest;
   });
 });
 
@@ -123,38 +107,22 @@ export const getExercise = cache(async (id: string): Promise<PullRequest | null>
     return null;
   }
 
-  const files: DiffFile[] = (ex.exercise_files ?? [])
-    .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
-    .map((f: { path: string; additions: number; deletions: number; file_chunks?: { header: string; lines: DiffLine[]; sort_order: number }[] }) => ({
-      path: f.path,
-      additions: f.additions,
-      deletions: f.deletions,
-      chunks: (f.file_chunks ?? [])
-        .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
-        .map((c): DiffChunk => ({
-          header: c.header,
+  const exercise_files: DiffFile[] = (ex.exercise_files ?? [])
+    .sort((a: any, b: any) => a.sort_order - b.sort_order)
+    .map((f: any) => ({
+      ...f,
+      file_chunks: (f.file_chunks ?? [])
+        .sort((a: any, b: any) => a.sort_order - b.sort_order)
+        .map((c: any): DiffChunk => ({
+          ...c,
           lines: c.lines as DiffLine[],
         })),
     }));
 
   return {
-    id: ex.id,
-    title: ex.title,
-    description: ex.description,
-    difficulty: ex.difficulty as Difficulty,
-    techStack: ex.tech_stack,
-    tags: ex.tags as Tag[],
-    author: ex.author,
-    baseBranch: ex.base_branch,
-    headBranch: ex.head_branch,
-    files,
-    feedback: {
-      score: 0,
-      expectedIssues: [],
-      commonlyMissed: ex.commonly_missed,
-      seniorExample: ex.senior_example,
-    },
-  };
+    ...ex,
+    exercise_files,
+  } as PullRequest;
 });
 
 import { DISCUSSIONS_PAGE_SIZE, REPLIES_PAGE_SIZE } from "@/lib/constants";
@@ -169,7 +137,7 @@ export async function getDiscussions(
   const supabase = await createClient();
 
   // Fetch current user to check their votes
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getUser();
 
   const { data: discussions, error } = await supabase
     .from("discussions")
@@ -207,21 +175,20 @@ export async function getDiscussions(
   }
 
   return (discussions ?? []).map((d: any) => {
-    const author = d.profiles;
+    const profiles = d.profiles;
 
     return {
-      id: d.id,
+      ...d,
+      profiles,
       author: {
-        name: author?.full_name || author?.username || "Anonymous",
-        avatar: author?.avatar_url || "",
+        name: profiles?.full_name || profiles?.username || "Anonymous",
+        avatar: profiles?.avatar_url || "",
       },
-      content: d.content,
-      timestamp: new Date(d.created_at).getTime(),
       upvotes: d.discussion_votes?.[0]?.count ?? 0,
       hasUpvoted: votedIds.has(d.id),
       replyCount: d.discussion_replies?.[0]?.count ?? 0,
-      replies: [], // Loaded on-demand
-    };
+      discussion_replies: [], // Loaded on-demand
+    } as Discussion;
   });
 }
 
@@ -255,13 +222,194 @@ export async function getDiscussionReplies(
     return [];
   }
 
-  return (replies ?? []).map((r: any): DiscussionReply => ({
-    id: r.id,
+  return (replies ?? []).map((r: any): DiscussionReply => {
+    const profiles = r.profiles;
+    return {
+      ...r,
+      profiles,
+      author: {
+        name: profiles?.full_name || profiles?.username || "Anonymous",
+        avatar: profiles?.avatar_url || "",
+      }
+    } as DiscussionReply;
+  });
+}
+
+export async function getSolutions(exerciseId: string): Promise<any[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("solutions")
+    .select(`
+            id,
+            description,
+            created_at,
+            user_id,
+            profiles:user_id (
+                username,
+                full_name,
+                avatar_url
+            ),
+            solution_votes(count),
+            solution_comments(
+                id,
+                content,
+                created_at,
+                profiles:user_id (
+                    username,
+                    full_name,
+                    avatar_url
+                )
+            )
+        `)
+    .eq("exercise_id", exerciseId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching solutions:", error);
+    return [];
+  }
+
+  // Transform to match Solution interface
+  return (data ?? []).map((s: any) => ({
+    ...s,
     author: {
-      name: r.profiles?.full_name || r.profiles?.username || "Anonymous",
-      avatar: r.profiles?.avatar_url || "",
+      name: s.profiles?.full_name || s.profiles?.username || "Anonymous",
+      avatar: s.profiles?.avatar_url || "",
     },
-    content: r.content,
-    timestamp: new Date(r.created_at).getTime(),
+    upvotes: s.solution_votes?.[0]?.count ?? 0,
+    comments: (s.solution_comments ?? []).map((c: any) => ({
+      ...c,
+      author: {
+        name: c.profiles?.full_name || c.profiles?.username || "Anonymous",
+        avatar: c.profiles?.avatar_url || "",
+      }
+    })),
+  } as Solution));
+}
+
+export async function getReviewComments(reviewId: string): Promise<InlineComment[]> {
+  const supabase = await createClient();
+
+  // We explicitly select only the fields needed for the AI prompt.
+  // Note: review_comments doesn't have a direct user_id relation (it belongs to the review_id),
+  // so we don't attempt to join with profiles here.
+  const { data, error } = await supabase
+    .from("review_comments")
+    .select(`
+      id,
+      file_id,
+      line_index,
+      severity,
+      text,
+      review_id,
+      created_at
+    `)
+    .eq("review_id", reviewId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching review comments:", error);
+    return [];
+  }
+
+  // Map to InlineComment, defaulting author since it's not needed for the AI prompt
+  return (data ?? []).map((c: any) => ({
+    ...c,
+    profiles: null,
+    author: {
+      name: "Reviewer",
+      avatar: "",
+    }
+  } as InlineComment));
+}
+
+export async function getLatestUserReview(exerciseId: string): Promise<string | null> {
+  const { user } = await getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("user_reviews")
+    .select("id")
+    .eq("exercise_id", exerciseId)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code !== "PGRST116") { // ignores "Returns zero rows" error
+      console.error("Error fetching latest review:", error);
+    }
+    return null;
+  }
+
+  return data?.id ?? null;
+}
+
+export async function getUserReviewHistory(exerciseId: string) {
+  const { user } = await getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("user_reviews")
+    .select(`
+      id,
+      created_at,
+      review_comments(count)
+    `)
+    .eq("exercise_id", exerciseId)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching user review history:", error);
+    return [];
+  }
+
+  return (data ?? []).map((review: any) => ({
+    id: review.id,
+    createdAt: review.created_at,
+    commentCount: review.review_comments?.[0]?.count ?? 0,
   }));
+}
+
+export async function getAIFeedbackForReview(reviewId: string): Promise<import("../types").StructuredFeedback | null> {
+  const supabase = await createClient();
+
+  const { data: existingFeedback, error } = await supabase
+    .from('ai_feedback_results')
+    .select('summary, strengths, improvements, technical_accuracy, communication_style, constructiveness, completeness, comment_feedback, overall_score')
+    .eq('review_id', reviewId)
+    .single();
+
+  if (error || !existingFeedback) {
+    if (error && error.code !== "PGRST116") { // ignore not found
+      console.error("Error fetching AI feedback:", error);
+    }
+    return null;
+  }
+
+  return {
+    summary: existingFeedback.summary,
+    strengths: existingFeedback.strengths,
+    improvements: existingFeedback.improvements,
+    metrics: {
+      technical_accuracy: existingFeedback.technical_accuracy,
+      communication_style: existingFeedback.communication_style,
+      constructiveness: existingFeedback.constructiveness,
+      completeness: existingFeedback.completeness,
+    },
+    commentFeedback: existingFeedback.comment_feedback ?? [],
+    overallScore: existingFeedback.overall_score,
+  };
 }

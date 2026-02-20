@@ -12,29 +12,30 @@ import {
     Quote,
     ArrowRight,
 } from "lucide-react";
-import type { ReviewFeedback } from "@/lib/types";
+import type { ReviewFeedback, PullRequest, ExpectedIssue } from "@/lib/types";
 
 interface FeedbackTabProps {
     feedback: ReviewFeedback;
+    pr: PullRequest;
 }
 
-export function FeedbackTab({ feedback }: FeedbackTabProps) {
+export function FeedbackTab({ feedback, pr }: FeedbackTabProps) {
     const scoreColor =
-        feedback.score >= 80
+        feedback.overall_score >= 80
             ? "text-emerald-400"
-            : feedback.score >= 60
+            : feedback.overall_score >= 60
                 ? "text-amber-400"
                 : "text-red-400";
 
     const scoreRingColor =
-        feedback.score >= 80
+        feedback.overall_score >= 80
             ? "stroke-emerald-400"
-            : feedback.score >= 60
+            : feedback.overall_score >= 60
                 ? "stroke-amber-400"
                 : "stroke-red-400";
 
     const circumference = 2 * Math.PI * 54;
-    const offset = circumference - (feedback.score / 100) * circumference;
+    const offset = circumference - (feedback.overall_score / 100) * circumference;
 
     return (
         <div className="max-w-3xl mx-auto space-y-8">
@@ -65,7 +66,7 @@ export function FeedbackTab({ feedback }: FeedbackTabProps) {
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <span className={`text-3xl font-bold tabular-nums ${scoreColor}`}>
-                            {feedback.score}
+                            {feedback.overall_score}
                         </span>
                         <span className="text-xs text-muted-foreground mt-0.5">
                             / 100
@@ -85,7 +86,7 @@ export function FeedbackTab({ feedback }: FeedbackTabProps) {
                     </h2>
                 </div>
                 <div className="space-y-3">
-                    {feedback.expectedIssues.map((issue, i) => (
+                    {feedback.expected_issues?.map((issue: any, i: number) => (
                         <div
                             key={i}
                             className="border border-border/50 rounded-lg p-4 bg-card/30"
@@ -144,7 +145,7 @@ export function FeedbackTab({ feedback }: FeedbackTabProps) {
                     </h2>
                 </div>
                 <div className="space-y-2">
-                    {feedback.commonlyMissed.map((item, i) => (
+                    {pr.commonly_missed.map((item: string, i: number) => (
                         <div
                             key={i}
                             className="flex items-start gap-3 px-4 py-3 bg-card/20 border border-border/30 rounded-lg"
@@ -172,12 +173,12 @@ export function FeedbackTab({ feedback }: FeedbackTabProps) {
                 </div>
                 <div className="border border-border/50 rounded-lg bg-card/30 p-5">
                     <div className="prose prose-sm prose-invert max-w-none">
-                        {feedback.seniorExample.split("\n\n").map((paragraph, i) => (
+                        {pr.senior_example.split("\n\n").map((paragraph: string, i: number) => (
                             <p
                                 key={i}
                                 className="text-sm text-foreground/80 leading-relaxed mb-3 last:mb-0"
                             >
-                                {paragraph.split(/(\*\*[^*]+\*\*)/).map((part, j) => {
+                                {paragraph.split(/(\*\*[^*]+\*\*)/).map((part: string, j: number) => {
                                     if (part.startsWith("**") && part.endsWith("**")) {
                                         return (
                                             <strong key={j} className="text-foreground font-semibold">

@@ -20,12 +20,12 @@ interface DiscussionRowProps {
 export function DiscussionRow({ exerciseId, discussion, onUpvote, currentUser, onAuthRequired }: DiscussionRowProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isReplying, setIsReplying] = useState(false);
-    const [replies, setReplies] = useState<DiscussionReply[]>(discussion.replies ?? []);
+    const [replies, setReplies] = useState<DiscussionReply[]>(discussion.discussion_replies ?? []);
     const [isLoadingReplies, setIsLoadingReplies] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [repliesLoaded, setRepliesLoaded] = useState(false);
     const [hasMoreReplies, setHasMoreReplies] = useState(discussion.replyCount > REPLIES_PAGE_SIZE);
-    const [currentReplyCount, setCurrentReplyCount] = useState(Math.max(discussion.replyCount, discussion.replies?.length || 0));
+    const [currentReplyCount, setCurrentReplyCount] = useState(Math.max(discussion.replyCount, discussion.discussion_replies?.length || 0));
 
     const handleToggleReplies = async () => {
         if (isExpanded) {
@@ -68,9 +68,12 @@ export function DiscussionRow({ exerciseId, discussion, onUpvote, currentUser, o
 
         const newReply: DiscussionReply = {
             id: result.id,
-            author: { name: currentUser.name, avatar: currentUser.avatar },
+            author: { name: currentUser.name, avatar: currentUser.avatar || "" },
             content,
-            timestamp: Date.now(),
+            created_at: new Date().toISOString(),
+            discussion_id: discussion.id,
+            user_id: "temp-user-id",
+            profiles: null
         };
         setReplies((prev) => [...prev, newReply]);
         setCurrentReplyCount((prev) => prev + 1);
@@ -103,14 +106,14 @@ export function DiscussionRow({ exerciseId, discussion, onUpvote, currentUser, o
             <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                        <AvatarImage src={discussion.author.avatar} />
-                        <AvatarFallback>{discussion.author.name[0]}</AvatarFallback>
+                        <AvatarImage src={discussion.author?.avatar || ""} />
+                        <AvatarFallback>{discussion.author?.name?.[0] || 'A'}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-foreground">
-                        {discussion.author.name}
+                        {discussion.author?.name || 'Anonymous'}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                        • {formatDistanceToNow(discussion.timestamp, { addSuffix: true })}
+                        • {formatDistanceToNow(new Date(discussion.created_at), { addSuffix: true })}
                     </span>
                 </div>
 
@@ -202,14 +205,14 @@ function ReplyRow({ reply }: { reply: DiscussionReply }) {
     return (
         <div className="flex gap-3 relative pl-4 border-l-2 border-border/50">
             <Avatar className="h-6 w-6">
-                <AvatarImage src={reply.author.avatar} />
-                <AvatarFallback>{reply.author.name[0]}</AvatarFallback>
+                <AvatarImage src={reply.author?.avatar || ""} />
+                <AvatarFallback>{reply.author?.name?.[0] || 'A'}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{reply.author.name}</span>
+                    <span className="text-sm font-medium">{reply.author?.name || 'Anonymous'}</span>
                     <span className="text-xs text-muted-foreground">
-                        • {formatDistanceToNow(reply.timestamp, { addSuffix: true })}
+                        • {formatDistanceToNow(new Date(reply.created_at), { addSuffix: true })}
                     </span>
                 </div>
                 <p className="text-sm text-foreground/90">{reply.content}</p>

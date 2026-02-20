@@ -16,8 +16,8 @@ interface DiffViewerProps {
     files: DiffFile[];
     comments: Map<string, InlineComment>;
     onAddComment?: (
-        fileIndex: number,
-        lineIndex: number,
+        file_id: string,
+        line_index: number,
         text: string,
         severity: Severity
     ) => void;
@@ -53,12 +53,12 @@ export function DiffViewer({
     };
 
     const handleAddComment = (
-        fileIndex: number,
-        lineIndex: number,
+        file_id: string,
+        line_index: number,
         text: string,
         severity: Severity
     ) => {
-        onAddComment?.(fileIndex, lineIndex, text, severity);
+        onAddComment?.(file_id, line_index, text, severity);
         setActiveEditor(null);
     };
 
@@ -114,7 +114,7 @@ export function DiffViewer({
                         {/* Diff content */}
                         {!isCollapsed && (
                             <div className="overflow-x-auto">
-                                {file.chunks.map((chunk, chunkIndex) => (
+                                {file.file_chunks.map((chunk, chunkIndex) => (
                                     <div key={chunkIndex}>
                                         {/* Chunk header */}
                                         <div
@@ -126,8 +126,8 @@ export function DiffViewer({
 
                                         {/* Lines */}
                                         {chunk.lines.map((line, lineIndex) => {
-                                            const lineKey = `${fileIndex}-${chunkIndex}-${lineIndex}`;
-                                            const commentKey = `${fileIndex}-${chunkIndex}-${lineIndex}`;
+                                            const lineKey = `${file.id}-${chunkIndex}-${lineIndex}`;
+                                            const commentKey = `${file.id}-0-${lineIndex}`;
                                             const comment = comments.get(commentKey);
                                             const isEditorOpen = activeEditor === lineKey;
                                             const isHovered = hoveredLine === lineKey;
@@ -234,7 +234,7 @@ export function DiffViewer({
                                                         <InlineCommentEditor
                                                             onSubmit={(text, severity) =>
                                                                 handleAddComment(
-                                                                    fileIndex,
+                                                                    file.id,
                                                                     lineIndex,
                                                                     text,
                                                                     severity

@@ -21,8 +21,8 @@ const difficultyColors: Record<string, string> = {
 };
 
 export function PRCard({ pr }: { pr: PullRequest }) {
-    const totalAdditions = pr.files.reduce((sum, f) => sum + f.additions, 0);
-    const totalDeletions = pr.files.reduce((sum, f) => sum + f.deletions, 0);
+    const totalAdditions = pr.exercise_files.reduce((sum, f) => sum + f.additions, 0);
+    const totalDeletions = pr.exercise_files.reduce((sum, f) => sum + f.deletions, 0);
 
     return (
         <Link href={`/review/${pr.id}`} className="block group">
@@ -50,12 +50,12 @@ export function PRCard({ pr }: { pr: PullRequest }) {
                             <span className="text-emerald-400">+{totalAdditions}</span>
                             <span className="text-red-400">-{totalDeletions}</span>
                         </span>
-                        <span>{pr.files.length} files</span>
+                        <span>{pr.exercise_files.length} files</span>
                         <span className="text-muted-foreground/60">by {pr.author}</span>
                     </div>
 
                     <div className="flex flex-wrap gap-1.5">
-                        {pr.techStack.map((tech) => (
+                        {pr.tech_stack.map((tech) => (
                             <Badge
                                 key={tech}
                                 variant="secondary"

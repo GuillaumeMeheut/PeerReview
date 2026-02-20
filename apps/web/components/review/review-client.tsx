@@ -15,7 +15,7 @@ type ReviewClientProps = {
 export function ReviewClient({ pr, readOnly = false, initialComments = [] }: ReviewClientProps) {
     const [comments, setComments] = useState<Map<string, InlineComment>>(() => {
         const map = new Map<string, InlineComment>();
-        initialComments.forEach(c => map.set(`${c.fileIndex}-0-${c.lineIndex}`, c));
+        initialComments.forEach(c => map.set(`${c.file_id}-0-${c.line_index}`, c));
         return map;
     });
 
@@ -51,18 +51,20 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
     }, [pr.id, readOnly]);
 
     const handleAddComment = useCallback(
-        (fileIndex: number, lineIndex: number, text: string, severity: Severity) => {
+        (file_id: string, line_index: number, text: string, severity: Severity) => {
             if (readOnly) return;
-            const key = `${fileIndex}-0-${lineIndex}`;
+            const key = `${file_id}-0-${line_index}`;
             setComments((prev) => {
                 const next = new Map(prev);
                 next.set(key, {
                     id: key,
-                    fileIndex,
-                    lineIndex,
+                    file_id,
+                    line_index,
                     text,
                     severity,
-                    timestamp: Date.now(),
+                    created_at: new Date().toISOString(), // DB uses String for created_at, but we can mock
+                    review_id: pr.id,
+                    profiles: null,
                 });
                 saveToLocalStorage(next);
                 return next;
@@ -113,7 +115,7 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
             <div className="w-72 shrink-0">
                 <div className="sticky top-20">
                     <FileTree
-                        files={pr.files}
+                        files={pr.exercise_files}
                         activeFileIndex={activeFileIndex}
                         onFileClick={handleFileClick}
                     />
@@ -124,7 +126,7 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
             <div className="flex-1 min-w-0 space-y-6">
                 <div className={readOnly ? "pointer-events-none opacity-90" : ""}>
                     <DiffViewer
-                        files={pr.files}
+                        files={pr.exercise_files}
                         comments={comments}
                         onAddComment={handleAddComment}
                         onEditComment={handleEditComment}
@@ -136,7 +138,7 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
                 {!readOnly && (
                     <SubmitReview
                         comments={comments}
-                        files={pr.files}
+                        files={pr.exercise_files}
                         prId={pr.id}
                     />
                 )}

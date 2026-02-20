@@ -1,9 +1,12 @@
 "use client";
 
 import { Button } from "@workspace/ui/components/button";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Loader2 } from "lucide-react";
 import type { InlineComment, DiffFile } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { submitReview } from "@/lib/supabase/actions";
+import { toast } from "sonner";
 
 interface SubmitReviewProps {
     comments: Map<string, InlineComment>;
@@ -13,6 +16,8 @@ interface SubmitReviewProps {
 
 export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+
     const commentArray = Array.from(comments.values());
     const totalComments = commentArray.length;
     const criticalCount = commentArray.filter(
@@ -26,10 +31,44 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
     ).length;
 
     const handleSubmit = () => {
-        // Persist full comment map entries for the read-only view
-        const entries = Array.from(comments.entries());
-        localStorage.setItem(`review-comments-${prId}`, JSON.stringify(entries));
-        router.push(`/review/${prId}/feedback`);
+        startTransition(async () => {
+            try {
+                // Persist full comment map entries for the read-only view
+                const entries = Array.from(comments.entries());
+                localStorage.setItem(`review-comments-${prId}`, JSON.stringify(entries));
+
+                // Prepare comments for backend
+                const backendComments = commentArray.map(c => {
+                    const file = files.find(f => f.id === c.file_id);
+                    if (!file) {
+                        console.error(`File not found with ID ${c.file_id}`);
+                        return null;
+                    }
+                    return {
+                        fileId: file.id,
+                        lineIndex: c.line_index,
+                        text: c.text,
+                        severity: c.severity as "critical" | "suggestion" | "nitpick"
+                    };
+                }).filter((c): c is NonNullable<typeof c> => c !== null);
+
+                const result = await submitReview({
+                    exerciseId: prId,
+                    comments: backendComments
+                });
+
+                if (result.error) {
+                    toast.error(result.error);
+                    return;
+                }
+
+                toast.success("Review submitted successfully!");
+                router.push(`/review/${prId}/feedback/${result.reviewId}`);
+            } catch (error) {
+                console.error("Error submitting review:", error);
+                toast.error("An unexpected error occurred");
+            }
+        });
     };
 
     return (
@@ -63,8 +102,12 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
                     )}
                 </div>
 
-                <Button onClick={handleSubmit}>
-                    <Send className="h-3.5 w-3.5" />
+                <Button onClick={handleSubmit} disabled={isPending || totalComments === 0}>
+                    {isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                        <Send className="h-3.5 w-3.5" />
+                    )}
                     Submit Review
                 </Button>
             </div>

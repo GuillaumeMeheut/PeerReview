@@ -102,11 +102,14 @@ export function DiscussionTab({ exerciseId, initDiscussions, currentUser }: Disc
                 avatar: currentUser.avatar,
             },
             content,
-            timestamp: Date.now(),
+            created_at: new Date().toISOString(),
             upvotes: 0,
             hasUpvoted: false,
             replyCount: 0,
-            replies: [],
+            discussion_replies: [],
+            exercise_id: exerciseId,
+            user_id: "temp-user-id",
+            profiles: null,
         };
         setDiscussions((prev) => [newDiscussion, ...prev]);
     };

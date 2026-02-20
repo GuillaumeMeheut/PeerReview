@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getExercise } from "@/lib/supabase/queries";
+import { getExercise, getLatestUserReview } from "@/lib/supabase/queries";
 import { ReviewLayout } from "@/components/review/review-layout";
 
 type Params = Promise<{ id: string }>;
@@ -12,11 +12,16 @@ export default async function Layout({
     params: Params;
 }) {
     const { id } = await params;
-    const pr = await getExercise(id);
+
+    // Fetch both in parallel
+    const [pr, latestReviewId] = await Promise.all([
+        getExercise(id),
+        getLatestUserReview(id)
+    ]);
 
     if (!pr) {
         notFound();
     }
 
-    return <ReviewLayout pr={pr}>{children}</ReviewLayout>;
+    return <ReviewLayout pr={pr} latestReviewId={latestReviewId}>{children}</ReviewLayout>;
 }

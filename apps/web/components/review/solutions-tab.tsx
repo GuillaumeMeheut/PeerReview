@@ -2,16 +2,9 @@ import { Solution } from "@/lib/types";
 import { SolutionRow } from "./solution-row";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { Lock } from "lucide-react";
-import { getPRSolutions } from "@/lib/mock-data";
-import { useState } from "react";
 
-type SolutionsTabProps = {
-    prId: string;
-    onSelectSolution: (id: string) => void;
-}
+export function SolutionsTab({ prId, solutions }: { prId: string; solutions: Solution[] }) {
 
-export function SolutionsTab({ prId, onSelectSolution }: SolutionsTabProps) {
-    const [solutions] = useState<Solution[]>(() => getPRSolutions(prId));
     const listContent = solutions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Lock className="h-8 w-8 mb-3 opacity-40" />
@@ -26,7 +19,7 @@ export function SolutionsTab({ prId, onSelectSolution }: SolutionsTabProps) {
                 <SolutionRow
                     key={solution.id}
                     solution={solution}
-                    onSelect={onSelectSolution}
+                    prId={prId}
                 />
             ))}
         </div>

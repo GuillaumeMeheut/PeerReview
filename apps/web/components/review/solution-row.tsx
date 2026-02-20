@@ -3,13 +3,14 @@ import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
 import { Button } from "@workspace/ui/components/button";
 import type { Solution } from "@/lib/types";
+import Link from "next/link";
 
 interface SolutionRowProps {
     solution: Solution;
-    onSelect: (id: string) => void;
+    prId: string;
 }
 
-export function SolutionRow({ solution, onSelect }: SolutionRowProps) {
+export function SolutionRow({ solution, prId }: SolutionRowProps) {
     return (
         <div className="flex gap-4 p-4 border rounded-lg border-border/50 bg-card hover:border-border transition-colors">
             {/* Upvote Column */}
@@ -26,14 +27,14 @@ export function SolutionRow({ solution, onSelect }: SolutionRowProps) {
             <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                        <AvatarImage src={solution.author.avatar} />
-                        <AvatarFallback>{solution.author.name[0]}</AvatarFallback>
+                        <AvatarImage src={solution.author?.avatar || ""} />
+                        <AvatarFallback>{solution.author?.name?.[0] || 'A'}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium text-foreground">
-                        {solution.author.name}
+                        {solution.author?.name || 'Anonymous'}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                        • {formatDistanceToNow(solution.timestamp, { addSuffix: true })}
+                        • {formatDistanceToNow(new Date(solution.created_at), { addSuffix: true })}
                     </span>
                 </div>
 
@@ -46,10 +47,12 @@ export function SolutionRow({ solution, onSelect }: SolutionRowProps) {
                         variant="outline"
                         size="sm"
                         className="gap-2"
-                        onClick={() => onSelect(solution.id)}
+                        asChild
                     >
-                        <ExternalLink className="h-4 w-4" />
-                        See Solution
+                        <Link href={`/review/${prId}/solutions/${solution.id}`}>
+                            <ExternalLink className="h-4 w-4" />
+                            See Solution
+                        </Link>
                     </Button>
                 </div>
             </div>

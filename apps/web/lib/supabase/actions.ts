@@ -93,3 +93,66 @@ export async function fetchMoreDiscussions(exerciseId: string, offset: number) {
     const { getDiscussions } = await import("@/lib/supabase/queries");
     return getDiscussions(exerciseId, { offset });
 }
+
+interface SubmitReviewParams {
+    exerciseId: string;
+    comments: {
+        fileId: string;
+        lineIndex: number;
+        text: string;
+        severity: "critical" | "suggestion" | "nitpick";
+    }[];
+}
+
+export async function submitReview({ exerciseId, comments }: SubmitReviewParams) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "You must be logged in to submit a review" };
+    }
+
+    // 1. Create new submitted review
+    const { data: newReview, error } = await supabase
+        .from("user_reviews")
+        .insert({
+            user_id: user.id,
+            exercise_id: exerciseId,
+        })
+        .select("id")
+        .single();
+
+    if (error || !newReview) {
+        console.error("Error creating review:", error);
+        return { error: "Failed to create review" };
+    }
+    const reviewId = newReview.id;
+
+    // 2. Insert comments
+    if (comments.length > 0) {
+        const commentsToInsert = comments.map(c => ({
+            review_id: reviewId,
+            file_id: c.fileId,
+            line_index: c.lineIndex,
+            text: c.text,
+            severity: c.severity
+        }));
+
+        const { error: commentsError } = await supabase
+            .from("review_comments")
+            .insert(commentsToInsert);
+
+        if (commentsError) {
+            console.error("Error inserting comments:", commentsError);
+            return { error: "Failed to save comments" };
+        }
+    }
+
+    revalidatePath(`/review/${exerciseId}`);
+    return { success: true, reviewId };
+}
+
+export async function fetchUserReviewHistory(exerciseId: string) {
+    const { getUserReviewHistory } = await import("@/lib/supabase/queries");
+    return getUserReviewHistory(exerciseId);
+}

@@ -1,20 +1,16 @@
-"use client";
-
-import { useRouter } from "next/navigation";
 import { SolutionsTab } from "@/components/review/solutions-tab";
-import { use } from "react";
+import { getSolutions } from "@/lib/supabase/queries";
 
 type Params = Promise<{ id: string }>;
 
-export default function SolutionsPage({ params }: { params: Params }) {
-    // Unwrap params using use() hook since it's a promise in Next.js 15+
-    const { id } = use(params);
-    const router = useRouter();
+export default async function SolutionsPage({ params }: { params: Params }) {
+    const { id } = await params;
+    const solutions = await getSolutions(id);
 
     return (
         <SolutionsTab
             prId={id}
-            onSelectSolution={(solutionId) => router.push(`/review/${id}/solutions/${solutionId}`)}
+            solutions={solutions}
         />
     );
 }

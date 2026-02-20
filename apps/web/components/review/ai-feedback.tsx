@@ -14,67 +14,26 @@ import {
     Trophy,
     MessageSquareQuote
 } from "lucide-react";
-import { InlineComment } from "@/lib/types";
 import { LoginModal } from "@/components/auth/login-modal";
 
 import { Gauge } from "@workspace/ui/components/gauge";
+import { StructuredFeedback } from "@/lib/types";
 
 interface AIFeedbackProps {
     prId: string;
+    reviewId: string;
     isLoggedIn: boolean;
+    initialFeedback?: StructuredFeedback | null;
 }
 
-interface FeedbackMetrics {
-    technical_accuracy: number;
-    communication_style: number;
-    constructiveness: number;
-    completeness: number;
-}
-
-interface StructuredFeedback {
-    summary: string;
-    strengths: string[];
-    improvements: string[];
-    metrics: FeedbackMetrics;
-    overallScore: number;
-    commentFeedback?: {
-        commentId: string;
-        feedback: string;
-        rating: number;
-        category: "helpful" | "nitpick" | "incorrect" | "neutral";
-    }[];
-}
-
-export function AIFeedback({ prId, isLoggedIn }: AIFeedbackProps) {
-    const [comments, setComments] = useState<[string, InlineComment][]>([]);
-    const [hasCheckedStorage, setHasCheckedStorage] = useState(false);
-    const [feedback, setFeedback] = useState<StructuredFeedback | null>(null);
+export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback }: AIFeedbackProps) {
+    const [feedback, setFeedback] = useState<StructuredFeedback | null>(initialFeedback || null);
     const [isLoading, setIsLoading] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
-
-    useEffect(() => {
-        const stored = localStorage.getItem(`review-comments-${prId}`);
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) {
-                    setComments(parsed);
-                }
-            } catch (e) {
-                console.error("Failed to parse stored comments", e);
-            }
-        }
-        setHasCheckedStorage(true);
-    }, [prId]);
 
     const handleGenerate = async () => {
         if (!isLoggedIn) {
             setShowLoginModal(true);
-            return;
-        }
-
-        if (comments.length === 0) {
-            console.error("No comments found to analyze.");
             return;
         }
 
@@ -88,8 +47,8 @@ export function AIFeedback({ prId, isLoggedIn }: AIFeedbackProps) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    comments,
                     prId,
+                    reviewId,
                 }),
             });
 
@@ -107,15 +66,7 @@ export function AIFeedback({ prId, isLoggedIn }: AIFeedbackProps) {
         }
     };
 
-    if (!hasCheckedStorage) return null;
 
-    if (comments.length === 0 && !isLoading && !feedback) {
-        return (
-            <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground bg-muted/20">
-                <p>Submit a review with comments to get AI feedback.</p>
-            </div>
-        )
-    }
 
     return (
         <div className="space-y-6">
@@ -257,9 +208,8 @@ export function AIFeedback({ prId, isLoggedIn }: AIFeedbackProps) {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {feedback.commentFeedback.map((item) => {
-                                    const userCommentEntry = comments.find(([_, c]) => c.id === item.commentId);
-                                    if (!userCommentEntry) return null;
-                                    const userComment = userCommentEntry[1];
+                                    const userComment = item.originalComment;
+                                    if (!userComment) return null;
 
                                     return (
                                         <div key={item.commentId} className="p-4 rounded-lg bg-muted/50 border space-y-3">
@@ -267,7 +217,7 @@ export function AIFeedback({ prId, isLoggedIn }: AIFeedbackProps) {
                                                 <div className="space-y-1 flex-1">
                                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                         <Badge variant="outline">
-                                                            Line {userComment.lineIndex}
+                                                            Line {userComment.line_index}
                                                         </Badge>
                                                         <Badge variant={
                                                             userComment.severity === 'critical' ? 'destructive' :

@@ -20,7 +20,7 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
     const techStackOptions = useMemo(() => {
         const options = new Set<string>();
         pullRequests.forEach((pr) => {
-            pr.techStack.forEach((tech) => options.add(tech));
+            pr.tech_stack.forEach((tech) => options.add(tech));
         });
         return Array.from(options).sort();
     }, [pullRequests]);
@@ -39,7 +39,7 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
         return pullRequests.filter((pr) => {
             const matchesTech =
                 selectedTechStack.size === 0 ||
-                pr.techStack.some((tech) => selectedTechStack.has(tech));
+                pr.tech_stack.some((tech) => selectedTechStack.has(tech));
 
             const matchesType =
                 selectedTypes.size === 0 ||

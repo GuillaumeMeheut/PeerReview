@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getExercise } from "@/lib/supabase/queries";
+import { getExercise, getSolutions } from "@/lib/supabase/queries";
 import { ReviewClient } from "@/components/review/review-client";
 
 type Params = Promise<{ id: string; solutionId: string }>;
@@ -7,13 +7,18 @@ type Params = Promise<{ id: string; solutionId: string }>;
 export default async function SolutionPage({ params }: { params: Params }) {
     const { solutionId, id } = await params;
 
-    // TODO: Fetch solution comments from Supabase once solution queries are implemented
-    const solutionComments: never[] = [];
     const pr = await getExercise(id);
+    const solutions = await getSolutions(id);
+    const solution = solutions.find((s) => s.id === solutionId);
 
-    if (!pr) {
+    if (!pr || !solution) {
         notFound();
     }
+
+    // Merge solution comments into existing PR comments
+    // In a real app we might want to distinguish them or fetch them separately in the client
+    // For now we pass them as initialComments to the ReviewClient
+    const solutionComments = solution.comments || [];
 
     return (
         <ReviewClient

@@ -105,7 +105,7 @@ export function InlineCommentThread({
                 }}
                 onCancel={() => setIsEditing(false)}
                 initialText={comment.text}
-                initialSeverity={comment.severity}
+                initialSeverity={comment.severity as Severity}
             />
         );
     }

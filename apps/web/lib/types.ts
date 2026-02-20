@@ -1,7 +1,7 @@
+import { Database } from "./supabase/database.types";
+
 export type Difficulty = "Junior" | "Mid" | "Senior";
-
 export type Severity = "critical" | "suggestion" | "nitpick";
-
 export type Tag =
     | "refactor"
     | "readability"
@@ -17,93 +17,85 @@ export interface DiffLine {
     newLineNumber: number | null;
 }
 
-export interface DiffChunk {
-    header: string;
+// Map the core DB Row types
+export type ExerciseRow = Database["public"]["Tables"]["exercises"]["Row"];
+export type ExerciseFileRow = Database["public"]["Tables"]["exercise_files"]["Row"];
+export type FileChunkRow = Database["public"]["Tables"]["file_chunks"]["Row"];
+export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+export type ExpectedIssueRow = Database["public"]["Tables"]["exercise_expected_issues"]["Row"];
+export type DiscussionRowDB = Database["public"]["Tables"]["discussions"]["Row"];
+export type DiscussionReplyRow = Database["public"]["Tables"]["discussion_replies"]["Row"];
+export type SolutionRowDB = Database["public"]["Tables"]["solutions"]["Row"];
+export type ReviewCommentRow = Database["public"]["Tables"]["review_comments"]["Row"];
+export type FeedbackRow = Database["public"]["Tables"]["ai_feedback_results"]["Row"];
+
+// Constructed Types with Relationships
+
+export type DiffChunk = Omit<FileChunkRow, "lines"> & {
     lines: DiffLine[];
-}
+};
 
-export interface DiffFile {
-    path: string;
-    chunks: DiffChunk[];
-    additions: number;
-    deletions: number;
-}
+export type DiffFile = ExerciseFileRow & {
+    file_chunks: DiffChunk[];
+};
 
-export interface InlineComment {
-    id: string;
-    fileIndex: number;
-    lineIndex: number;
-    text: string;
-    severity: Severity;
-    timestamp: number;
-    author?: {
-        name: string;
-        avatar: string;
-    };
-}
+export type ExpectedIssue = ExpectedIssueRow;
 
-export interface ExpectedIssue {
-    title: string;
-    description: string;
-    severity: Severity;
-    line?: string;
-}
+export type DiscussionReply = DiscussionReplyRow & {
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
+    author?: { name: string; avatar: string }; // Keeping as optional for backward compatibility in some places or strict mapping
+};
 
-export interface DiscussionReply {
-    id: string;
-    author: {
-        name: string;
-        avatar: string;
-    };
-    content: string;
-    timestamp: number;
-}
-
-export interface Discussion {
-    id: string;
-    author: {
-        name: string;
-        avatar: string;
-    };
-    content: string;
-    timestamp: number;
+export type Discussion = DiscussionRowDB & {
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
     upvotes: number;
     hasUpvoted: boolean;
     replyCount: number;
-    replies: DiscussionReply[];
+    discussion_replies?: DiscussionReply[];
+    author?: { name: string; avatar: string }; // Keep for easy mapping or backward compatibility
+};
+
+export type ReviewFeedback = FeedbackRow & {
+    expected_issues?: ExpectedIssue[];
+};
+
+export interface FeedbackMetrics {
+    technical_accuracy: number;
+    communication_style: number;
+    constructiveness: number;
+    completeness: number;
 }
 
-export interface ReviewFeedback {
-    score: number;
-    expectedIssues: ExpectedIssue[];
-    commonlyMissed: string[];
-    seniorExample: string;
+export interface StructuredFeedback {
+    summary: string;
+    strengths: string[];
+    improvements: string[];
+    metrics: FeedbackMetrics;
+    overallScore: number;
+    commentFeedback?: {
+        commentId: string;
+        feedback: string;
+        rating: number;
+        category: "helpful" | "nitpick" | "incorrect" | "neutral";
+        originalComment?: InlineComment;
+    }[];
 }
 
-export interface PullRequest {
-    id: string;
-    title: string;
-    description: string;
-    difficulty: Difficulty;
-    techStack: string[];
-    tags: Tag[];
-    author: string;
-    baseBranch: string;
-    headBranch: string;
-    files: DiffFile[];
-    feedback: ReviewFeedback;
+export type PullRequest = ExerciseRow & {
+    exercise_files: DiffFile[];
+    feedback?: ReviewFeedback;
     discussions?: Discussion[];
     solutions?: Solution[];
-}
+};
 
-export interface Solution {
-    id: string;
-    author: {
-        name: string;
-        avatar: string;
-    };
-    description: string;
+export type InlineComment = ReviewCommentRow & {
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
+    author?: { name: string; avatar: string };
+};
+
+export type Solution = SolutionRowDB & {
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
     upvotes: number;
-    comments: InlineComment[];
-    timestamp: number;
-}
+    comments?: InlineComment[];
+    author?: { name: string; avatar: string };
+};
