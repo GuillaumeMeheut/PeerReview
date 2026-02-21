@@ -116,8 +116,11 @@ export function SubmissionHistory({ exerciseId, currentReviewId }: SubmissionHis
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Button variant="outline" size="sm" className="h-8 text-xs">
-                                                Show solution
+
+                                            <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
+                                                <Link href={`/review/${exerciseId}/${item.id}`}>
+                                                    View review
+                                                </Link>
                                             </Button>
                                             {isCurrent ? (
                                                 <Button variant="secondary" size="sm" className="h-8 text-xs" disabled>

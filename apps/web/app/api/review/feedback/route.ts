@@ -32,42 +32,32 @@ export async function POST(req: Request) {
     Tech Stack: ${pr.tech_stack.join(', ')}
     Difficulty: ${pr.difficulty}
 
-    Here are the files in the PR and the changes:
+    Here are the files in the PR and the changes. Each line is prefixed with its Line Index, which corresponds to the line index in the candidate's comments:
     ${pr.exercise_files.map(file => `
       File: ${file.path}
-      ${file.file_chunks.map(chunk => chunk.lines.map(line => `${line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '} ${line.content}`).join('\n')).join('\n')}
+      ${file.file_chunks.map(chunk => chunk.lines.map((line, index) => `[Line Index: ${index}] ${line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '} ${line.content}`).join('\n')).join('\n')}
     `).join('\n\n')}
 
-    Here are the comments the candidate made on the code:
+    Here are the comments the candidate made on the code.:
     ${userComments.length === 0 ? 'No comments were made.' : userComments.map(c => `
       Comment ID: ${c.id}
       File ID: ${c.file_id}
       Line Index: ${c.line_index}
-      Severity: ${c.severity}
       Comment: "${c.text}"
     `).join('\n')}
 
-    Please provide a constructive and detailed feedback on the candidate's review.
-    Focus on:
-    1. Did they identify the critical issues?
-    2. Is their feedback clear and actionable?
-    3. Did they miss any important patterns or bugs?
-    4. Is the tone appropriate?
+    Please evaluate the candidate's review quality.
+    
+    First, independently identify the critical bugs, vulnerabilities, and anti-patterns present in the code provided above.
+    Then, compare your findings against the candidate's comments to see what they caught and what they missed.
 
-    For each comment, provide specific feedback on whether it was useful, accurate, and if the tone was appropriate.
+    Focus on the following criteria:
+    1. Did they identify the critical issues? (If they missed glaring bugs, this should reflect poorly on completeness).
+    2. Is their feedback clear, actionable, and accurate?
+    3. Are there useless or fluff comments (e.g., just saying "good", "looks nice", or restating what the code does without value)? These should be rated poorly.
+    4. Is the tone appropriate and constructive?
 
-    Structure your response in Markdown formats:
-    ## Summary
-    A brief summary of the review quality.
-
-    ## Strengths
-    Bullet points of what they did well.
-
-    ## Areas for Improvement
-    Bullet points of what they missed or could improve.
-
-    ## Overall Rating
-    Give a rating out of 10.
+    For each comment, provide specific feedback. Explain why the comment is good, bad, or useless, considering the exact code at that Line Index. Evaluate the comment purely based on its textual content rather than any severity or comment type label.
   `;
 
   const { output } = await generateText({
