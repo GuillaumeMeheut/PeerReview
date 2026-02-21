@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createClient } from "./server";
-import type { PullRequest, DiffFile, DiffChunk, DiffLine, Discussion, DiscussionReply, Solution, InlineComment } from "../types";
+import type { PullRequest, DiffFile, DiffChunk, DiffLine, Discussion, DiscussionReply, Solution, InlineComment, SolutionReply } from "../types";
 
 // type SupabaseClient = ReturnType<typeof createClient>;
 
@@ -250,16 +250,7 @@ export async function getSolutions(exerciseId: string): Promise<any[]> {
                 avatar_url
             ),
             solution_votes(count),
-            solution_comments(
-                id,
-                content,
-                created_at,
-                profiles:user_id (
-                    username,
-                    full_name,
-                    avatar_url
-                )
-            )
+            solution_replies(count)
         `)
     .eq("exercise_id", exerciseId)
     .order("created_at", { ascending: false });
@@ -277,22 +268,108 @@ export async function getSolutions(exerciseId: string): Promise<any[]> {
       avatar: s.profiles?.avatar_url || "",
     },
     upvotes: s.solution_votes?.[0]?.count ?? 0,
-    comments: (s.solution_comments ?? []).map((c: any) => ({
-      ...c,
-      author: {
-        name: c.profiles?.full_name || c.profiles?.username || "Anonymous",
-        avatar: c.profiles?.avatar_url || "",
-      }
-    })),
+    replyCount: s.solution_replies?.[0]?.count ?? 0,
+    replies: [], // Fetched on demand
   } as Solution));
+}
+
+/**
+ * Fetches replies for a specific solution. Called on-demand when user expands replies.
+ */
+export async function getSolutionReplies(
+  solutionId: string,
+  { limit = REPLIES_PAGE_SIZE, offset = 0 }: { limit?: number; offset?: number } = {}
+): Promise<SolutionReply[]> {
+  const supabase = await createClient();
+
+  const { data: replies, error } = await supabase
+    .from("solution_replies")
+    .select(`
+      id,
+      content,
+      created_at,
+      profiles:user_id (
+        username,
+        full_name,
+        avatar_url
+      )
+    `)
+    .eq("solution_id", solutionId)
+    .order("created_at", { ascending: true })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error("Error fetching solution replies:", error);
+    return [];
+  }
+
+  return (replies ?? []).map((r: any): SolutionReply => {
+    const profiles = r.profiles;
+    return {
+      ...r,
+      profiles,
+      author: {
+        name: profiles?.full_name || profiles?.username || "Anonymous",
+        avatar: profiles?.avatar_url || "",
+      }
+    } as SolutionReply;
+  });
+}
+
+export async function getSolutionComments(solutionId: string): Promise<InlineComment[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("solutions")
+    .select(`
+      user_reviews (
+        user_id,
+        profiles:user_id (
+          username,
+          full_name,
+          avatar_url
+        ),
+        review_comments (
+          id,
+          file_id,
+          line_index,
+          severity,
+          text,
+          review_id,
+          created_at
+        )
+      )
+    `)
+    .eq("id", solutionId)
+    .single();
+
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("Error fetching solution comments:", error);
+    }
+    return [];
+  }
+
+  const review = data?.user_reviews as any;
+  const reviewObj = Array.isArray(review) ? review[0] : review;
+  const comments = reviewObj?.review_comments ?? [];
+  const profiles = reviewObj?.profiles;
+
+  const authorProfile = Array.isArray(profiles) ? profiles[0] : profiles;
+
+  return comments.map((c: any) => ({
+    ...c,
+    profiles: authorProfile,
+    author: {
+      name: authorProfile?.full_name || authorProfile?.username || "Anonymous",
+      avatar: authorProfile?.avatar_url || "",
+    }
+  } as InlineComment));
 }
 
 export async function getReviewComments(reviewId: string): Promise<InlineComment[]> {
   const supabase = await createClient();
 
-  // We explicitly select only the fields needed for the AI prompt.
-  // Note: review_comments doesn't have a direct user_id relation (it belongs to the review_id),
-  // so we don't attempt to join with profiles here.
   const { data, error } = await supabase
     .from("review_comments")
     .select(`

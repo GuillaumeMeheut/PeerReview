@@ -84,9 +84,72 @@ export async function createDiscussionReply(exerciseId: string, discussionId: st
     return { success: true, id: data.id as string };
 }
 
+export async function toggleSolutionVote(exerciseId: string, solutionId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "You must be logged in to vote" };
+    }
+
+    // Check if vote already exists
+    const { data: existing } = await supabase
+        .from("solution_votes")
+        .select("id")
+        .eq("solution_id", solutionId)
+        .eq("user_id", user.id)
+        .single();
+
+    if (existing) {
+        // Remove vote (toggle off)
+        await supabase.from("solution_votes").delete().eq("id", existing.id);
+    } else {
+        // Add vote
+        const { error } = await supabase
+            .from("solution_votes")
+            .insert({ solution_id: solutionId, user_id: user.id });
+
+        if (error) {
+            console.error("Error voting:", error);
+            return { error: "Failed to vote" };
+        }
+    }
+
+    revalidatePath(`/review/${exerciseId}/solutions`);
+    return { success: true };
+}
+
+export async function createSolutionReply(exerciseId: string, solutionId: string, content: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "You must be logged in to reply" };
+    }
+
+    const { data, error } = await supabase
+        .from("solution_replies")
+        .insert({ solution_id: solutionId, user_id: user.id, content })
+        .select("id")
+        .single();
+
+    if (error || !data) {
+        console.error("Error creating reply:", error);
+        return { error: "Failed to create reply" };
+    }
+
+    revalidatePath(`/review/${exerciseId}/solutions`);
+    return { success: true, id: data.id as string };
+}
+
 export async function fetchReplies(discussionId: string, offset = 0) {
     const { getDiscussionReplies } = await import("@/lib/supabase/queries");
     return getDiscussionReplies(discussionId, { offset });
+}
+
+export async function fetchSolutionReplies(solutionId: string, offset = 0) {
+    const { getSolutionReplies } = await import("@/lib/supabase/queries");
+    return getSolutionReplies(solutionId, { offset });
 }
 
 export async function fetchMoreDiscussions(exerciseId: string, offset: number) {
@@ -155,4 +218,38 @@ export async function submitReview({ exerciseId, comments }: SubmitReviewParams)
 export async function fetchUserReviewHistory(exerciseId: string) {
     const { getUserReviewHistory } = await import("@/lib/supabase/queries");
     return getUserReviewHistory(exerciseId);
+}
+
+interface SubmitSolutionParams {
+    exerciseId: string;
+    description: string;
+    userReviewId: string | null;
+}
+
+export async function submitSolution({ exerciseId, description, userReviewId }: SubmitSolutionParams) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: "You must be logged in to submit a solution" };
+    }
+
+    const { data, error } = await supabase
+        .from("solutions")
+        .insert({
+            exercise_id: exerciseId,
+            user_id: user.id,
+            description,
+            user_review_id: userReviewId
+        })
+        .select("id")
+        .single();
+
+    if (error || !data) {
+        console.error("Error creating solution:", error);
+        return { error: "Failed to create solution" };
+    }
+
+    revalidatePath(`/review/${exerciseId}/solutions`);
+    return { success: true, id: data.id as string };
 }

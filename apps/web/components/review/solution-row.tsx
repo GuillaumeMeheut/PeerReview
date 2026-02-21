@@ -1,61 +1,84 @@
-import { ArrowBigUp, ExternalLink } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar";
+"use client";
+
+import { ExternalLink } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import type { Solution } from "@/lib/types";
 import Link from "next/link";
+import { fetchSolutionReplies, createSolutionReply } from "@/lib/supabase/actions";
+import type { UserProfile } from "./discussion-tab";
+import { ThreadRow, type ThreadReply } from "./thread-row";
 
 interface SolutionRowProps {
     solution: Solution;
     prId: string;
+    onUpvote: (id: string) => void;
+    currentUser: UserProfile | null;
+    onAuthRequired: () => void;
 }
 
-export function SolutionRow({ solution, prId }: SolutionRowProps) {
+export function SolutionRow({ solution, prId, onUpvote, currentUser, onAuthRequired }: SolutionRowProps) {
+
+    const initialReplies: ThreadReply[] = solution.replies?.map(r => ({
+        id: r.id,
+        content: r.content,
+        author: r.author,
+        createdAt: r.created_at
+    })) ?? [];
+
+    const handleFetchReplies = async (offset: number): Promise<ThreadReply[]> => {
+        const data = await fetchSolutionReplies(solution.id, offset);
+        return data.map(r => ({
+            id: r.id,
+            content: r.content,
+            author: r.author,
+            createdAt: r.created_at
+        }));
+    };
+
+    const handleSubmitReply = async (content: string) => {
+        const result = await createSolutionReply(prId, solution.id, content);
+        if (result.error || !result.id) return { error: result.error };
+
+        return {
+            reply: {
+                id: result.id,
+                author: { name: currentUser?.name, avatar: currentUser?.avatar || "" },
+                content,
+                createdAt: new Date().toISOString()
+            }
+        };
+    };
+
+    const extraActions = (
+        <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            asChild
+        >
+            <Link href={`/review/${prId}/solutions/${solution.id}`}>
+                <ExternalLink className="h-4 w-4" />
+                See Solution
+            </Link>
+        </Button>
+    );
+
     return (
-        <div className="flex gap-4 p-4 border rounded-lg border-border/50 bg-card hover:border-border transition-colors">
-            {/* Upvote Column */}
-            <div className="flex flex-col items-center gap-1 min-w-[32px]">
-                <div className="h-8 w-8 flex items-center justify-center text-muted-foreground">
-                    <ArrowBigUp className="h-6 w-6" />
-                </div>
-                <span className="text-sm font-medium text-muted-foreground">
-                    {solution.upvotes}
-                </span>
-            </div>
-
-            {/* Content Column */}
-            <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                        <AvatarImage src={solution.author?.avatar || ""} />
-                        <AvatarFallback>{solution.author?.name?.[0] || 'A'}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium text-foreground">
-                        {solution.author?.name || 'Anonymous'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                        • {formatDistanceToNow(new Date(solution.created_at), { addSuffix: true })}
-                    </span>
-                </div>
-
-                <p className="text-sm leading-relaxed text-foreground/90 max-w-4xl">
-                    {solution.description}
-                </p>
-
-                <div className="pt-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        asChild
-                    >
-                        <Link href={`/review/${prId}/solutions/${solution.id}`}>
-                            <ExternalLink className="h-4 w-4" />
-                            See Solution
-                        </Link>
-                    </Button>
-                </div>
-            </div>
-        </div>
+        <ThreadRow
+            id={solution.id}
+            content={solution.description}
+            author={solution.author}
+            createdAt={solution.created_at}
+            upvotes={solution.upvotes}
+            hasUpvoted={!!solution.hasUpvoted}
+            replyCount={solution.replyCount}
+            initialReplies={initialReplies}
+            onUpvote={onUpvote}
+            onAuthRequired={onAuthRequired}
+            onFetchReplies={handleFetchReplies}
+            onSubmitReply={handleSubmitReply}
+            currentUser={currentUser}
+            extraActions={extraActions}
+        />
     );
 }

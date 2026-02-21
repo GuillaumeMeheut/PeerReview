@@ -25,6 +25,7 @@ export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 export type ExpectedIssueRow = Database["public"]["Tables"]["exercise_expected_issues"]["Row"];
 export type DiscussionRowDB = Database["public"]["Tables"]["discussions"]["Row"];
 export type DiscussionReplyRow = Database["public"]["Tables"]["discussion_replies"]["Row"];
+export type SolutionReplyRow = Database["public"]["Tables"]["solution_replies"]["Row"];
 export type SolutionRowDB = Database["public"]["Tables"]["solutions"]["Row"];
 export type ReviewCommentRow = Database["public"]["Tables"]["review_comments"]["Row"];
 export type FeedbackRow = Database["public"]["Tables"]["ai_feedback_results"]["Row"];
@@ -93,9 +94,16 @@ export type InlineComment = ReviewCommentRow & {
     author?: { name: string; avatar: string };
 };
 
+export type SolutionReply = SolutionReplyRow & {
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
+    author?: { name: string; avatar: string };
+};
+
 export type Solution = SolutionRowDB & {
     profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
     upvotes: number;
-    comments?: InlineComment[];
+    hasUpvoted?: boolean;
+    replyCount: number;
+    replies?: SolutionReply[];
     author?: { name: string; avatar: string };
 };
