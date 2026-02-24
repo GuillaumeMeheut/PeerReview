@@ -1,29 +1,74 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
-import { getExercise, getReviewComments } from '@/lib/supabase/queries';
+import { getExercise, getReviewComments, getUser, getAIFeedbackForReview } from '@/lib/supabase/queries';
 import { createServerSupabaseClientWithServiceRole } from '@/lib/supabase/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(5, '1 m'),
+  analytics: true,
+  enableProtection: true,
+});
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? '127.0.0.1';
+  const { success, limit, reset, remaining } = await ratelimit.limit(
+    `ratelimit_${ip}`
+  );
+
+  if (!success) {
+    return new Response('Too many requests. Please try again later.', {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': limit.toString(),
+        'X-RateLimit-Remaining': remaining.toString(),
+        'X-RateLimit-Reset': reset.toString(),
+      },
+    });
+  }
+
   const { prId, reviewId }: { prId: string, reviewId: string } = await req.json();
 
-  const [pr, userComments] = await Promise.all([
-    getExercise(prId),
-    getReviewComments(reviewId)
-  ]);
+  const { user } = await getUser();
 
-
-  if (!pr) {
-    return new Response('Pull request not found', { status: 404 });
+  if (!user) {
+    return new Response('User not found', { status: 404 });
   }
 
-  if (!userComments || userComments.length === 0) {
-    return new Response('No comments found', { status: 404 });
+  const existingFeedback = await getAIFeedbackForReview(reviewId);
+  if (existingFeedback) {
+    return Response.json(existingFeedback);
   }
 
-  const prompt = `
+  // Deduplication: prevent concurrent AI generated responses
+  const redis = Redis.fromEnv();
+  const lockKey = `ai_feedback_lock_${reviewId}`;
+  const isLocked = await redis.set(lockKey, 'locked', { nx: true, ex: 60 });
+
+  if (!isLocked) {
+    return new Response('AI Feedback is currently being generated for this review. Please check back in a minute.', { status: 409 });
+  }
+
+  try {
+    const [pr, userComments] = await Promise.all([
+      getExercise(prId),
+      getReviewComments(reviewId)
+    ]);
+
+
+    if (!pr) {
+      return new Response('Pull request not found', { status: 404 });
+    }
+
+    if (!userComments || userComments.length === 0) {
+      return new Response('No comments found', { status: 404 });
+    }
+
+    const prompt = `
     You are an expert Principal Software Engineer evaluating a candidate's code review skills.
     Your task is to grade the code review submitted by the candidate on the following Pull Request.
 
@@ -81,61 +126,63 @@ export async function POST(req: Request) {
     Keep your explanations concise and focus only on the substantial value of the candidate's review.
   `;
 
-  const { output } = await generateText({
-    model: openai('gpt-4o'),
-    output: Output.object({
-      schema: z.object({
-        summary: z.string().describe("Overall summary of the candidate's code review performance."),
-        strengths: z.array(z.string()).describe("Key strengths of the candidate's review."),
-        improvements: z.array(z.string()).describe("Areas where the candidate can improve their code review skills."),
-        metrics: z.object({
-          technical_accuracy: z.number().min(0).max(10).describe("How accurate the technical feedback is"),
-          communication_style: z.number().min(0).max(10).describe("Tone, clarity, and empathy"),
-          constructiveness: z.number().min(0).max(10).describe("Actionable advice vs just criticism"),
-          completeness: z.number().min(0).max(10).describe("Coverage of critical issues and edge cases"),
+    const { output } = await generateText({
+      model: openai('gpt-4o'),
+      output: Output.object({
+        schema: z.object({
+          summary: z.string().describe("Overall summary of the candidate's code review performance."),
+          strengths: z.array(z.string()).describe("Key strengths of the candidate's review."),
+          improvements: z.array(z.string()).describe("Areas where the candidate can improve their code review skills."),
+          metrics: z.object({
+            technical_accuracy: z.number().min(0).max(10).describe("How accurate the technical feedback is"),
+            communication_style: z.number().min(0).max(10).describe("Tone, clarity, and empathy"),
+            constructiveness: z.number().min(0).max(10).describe("Actionable advice vs just criticism"),
+            completeness: z.number().min(0).max(10).describe("Coverage of critical issues and edge cases"),
+          }),
+          commentFeedback: z.array(z.object({
+            commentId: z.string(),
+            feedback: z.string().describe("Direct feedback to the candidate about their comment. E.g., 'Great catch on the security issue!' or 'Incorrect, this approach is valid because...' Avoid artificial criticism for valid points."),
+            rating: z.number().min(1).max(10).describe("1-4 = incorrect/unhelpful, 5-7 = okay/nitpick, 8-10 = excellent/crucial catch"),
+            category: z.enum(["helpful", "nitpick", "incorrect", "neutral"]).describe("Category of the comment"),
+          })).describe("Feedback for each individual comment"),
+          overallScore: z.number().min(0).max(10),
         }),
-        commentFeedback: z.array(z.object({
-          commentId: z.string(),
-          feedback: z.string().describe("Direct feedback to the candidate about their comment. E.g., 'Great catch on the security issue!' or 'Incorrect, this approach is valid because...' Avoid artificial criticism for valid points."),
-          rating: z.number().min(1).max(10).describe("1-4 = incorrect/unhelpful, 5-7 = okay/nitpick, 8-10 = excellent/crucial catch"),
-          category: z.enum(["helpful", "nitpick", "incorrect", "neutral"]).describe("Category of the comment"),
-        })).describe("Feedback for each individual comment"),
-        overallScore: z.number().min(0).max(10),
       }),
-    }),
-    prompt,
-  });
+      prompt,
+    });
 
-  const response = {
-    ...output,
-    commentFeedback: output.commentFeedback.map(fb => ({
-      ...fb,
-      originalComment: userComments.find(c => c.id === fb.commentId)
-    }))
-  };
+    const response = {
+      ...output,
+      commentFeedback: output.commentFeedback.map(fb => ({
+        ...fb,
+        originalComment: userComments.find(c => c.id === fb.commentId)
+      }))
+    };
 
-  console.log(response);
+    const supabase = createServerSupabaseClientWithServiceRole();
+    const { error: insertError } = await supabase
+      .from('ai_feedback_results')
+      .upsert({
+        review_id: reviewId,
+        summary: response.summary,
+        strengths: response.strengths,
+        improvements: response.improvements,
+        technical_accuracy: response.metrics.technical_accuracy,
+        communication_style: response.metrics.communication_style,
+        constructiveness: response.metrics.constructiveness,
+        completeness: response.metrics.completeness,
+        comment_feedback: response.commentFeedback as any,
+        overall_score: response.overallScore,
+      }, { onConflict: 'review_id' });
 
+    if (insertError) {
+      console.error('Failed to save AI feedback:', insertError);
+    }
 
-  const supabase = createServerSupabaseClientWithServiceRole();
-  const { error: insertError } = await supabase
-    .from('ai_feedback_results')
-    .upsert({
-      review_id: reviewId,
-      summary: response.summary,
-      strengths: response.strengths,
-      improvements: response.improvements,
-      technical_accuracy: response.metrics.technical_accuracy,
-      communication_style: response.metrics.communication_style,
-      constructiveness: response.metrics.constructiveness,
-      completeness: response.metrics.completeness,
-      comment_feedback: response.commentFeedback as any,
-      overall_score: response.overallScore,
-    }, { onConflict: 'review_id' });
-
-  if (insertError) {
-    console.error('Failed to save AI feedback:', insertError);
+    return Response.json(response);
+  } finally {
+    // Release the block
+    await redis.del(lockKey);
   }
-
-  return Response.json(response);
 }
+
