@@ -14,22 +14,12 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
     const [selectedTechStack, setSelectedTechStack] = useState<Set<string>>(
         new Set(),
     );
-    const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
 
     // Extract all unique options
     const techStackOptions = useMemo(() => {
         const options = new Set<string>();
         pullRequests.forEach((pr) => {
             pr.tech_stack.forEach((tech) => options.add(tech));
-        });
-        return Array.from(options).sort();
-    }, [pullRequests]);
-
-    const typeOptions = useMemo(() => {
-        const options = new Set<string>();
-        pullRequests.forEach((pr) => {
-            options.add(pr.difficulty);
-            pr.tags.forEach((tag) => options.add(tag));
         });
         return Array.from(options).sort();
     }, [pullRequests]);
@@ -41,14 +31,9 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
                 selectedTechStack.size === 0 ||
                 pr.tech_stack.some((tech) => selectedTechStack.has(tech));
 
-            const matchesType =
-                selectedTypes.size === 0 ||
-                selectedTypes.has(pr.difficulty) ||
-                pr.tags.some((tag) => selectedTypes.has(tag));
-
-            return matchesTech && matchesType;
+            return matchesTech;
         });
-    }, [pullRequests, selectedTechStack, selectedTypes]);
+    }, [pullRequests, selectedTechStack]);
 
     const toggleTechStack = (tech: string) => {
         const newSet = new Set(selectedTechStack);
@@ -60,30 +45,25 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
         setSelectedTechStack(newSet);
     };
 
-    const toggleType = (type: string) => {
-        const newSet = new Set(selectedTypes);
-        if (newSet.has(type)) {
-            newSet.delete(type);
-        } else {
-            newSet.add(type);
-        }
-        setSelectedTypes(newSet);
-    };
-
     const clearAll = () => {
         setSelectedTechStack(new Set());
-        setSelectedTypes(new Set());
     };
 
     return (
-        <main className="max-w-6xl mx-auto px-6 py-8">
+        <main className="max-w-6xl mx-auto px-6 py-12">
+            <div className="mb-12 space-y-4">
+                <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">
+                    Explore Pull Requests
+                </h1>
+                <p className="text-xl text-muted-foreground max-w-3xl">
+                    Level up your code review skills by exploring and reviewing pull requests.
+                </p>
+            </div>
+
             <FilterBar
                 techStackOptions={techStackOptions}
-                typeOptions={typeOptions}
                 selectedTechStack={selectedTechStack}
-                selectedTypes={selectedTypes}
                 onToggleTechStack={toggleTechStack}
-                onToggleType={toggleType}
                 onClearAll={clearAll}
             />
 
@@ -97,7 +77,7 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
             </div>
 
             {filteredPRs.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredPRs.map((pr) => (
                         <PRCard key={pr.id} pr={pr} />
                     ))}

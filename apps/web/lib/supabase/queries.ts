@@ -32,8 +32,6 @@ export const getExercises = cache(async (): Promise<PullRequest[]> => {
       author,
       base_branch,
       head_branch,
-      commonly_missed,
-      senior_example,
       exercise_files (
         id,
         path,
@@ -75,6 +73,7 @@ export const getExercise = cache(async (id: string): Promise<PullRequest | null>
     .from("exercises")
     .select(`
       id,
+      created_at,
       title,
       description,
       difficulty,
@@ -84,7 +83,6 @@ export const getExercise = cache(async (id: string): Promise<PullRequest | null>
       base_branch,
       head_branch,
       commonly_missed,
-      senior_example,
       exercise_files (
         id,
         path,
@@ -97,6 +95,15 @@ export const getExercise = cache(async (id: string): Promise<PullRequest | null>
           lines,
           sort_order
         )
+      ),
+      exercise_expected_issues (
+        id,
+        exercise_id,
+        title,
+        description,
+        severity,
+        line,
+        sort_order
       )
     `)
     .eq("id", id)
@@ -122,7 +129,8 @@ export const getExercise = cache(async (id: string): Promise<PullRequest | null>
   return {
     ...ex,
     exercise_files,
-  } as PullRequest;
+    expected_issues: (ex.exercise_expected_issues ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+  } as unknown as PullRequest & { expected_issues: import("../types").ExpectedIssue[] };
 });
 
 import { DISCUSSIONS_PAGE_SIZE, REPLIES_PAGE_SIZE } from "@/lib/constants";

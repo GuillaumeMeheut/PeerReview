@@ -56,82 +56,85 @@ export function SubmissionHistory({ exerciseId, currentReviewId }: SubmissionHis
         <Collapsible
             open={isOpen}
             onOpenChange={handleOpenChange}
-            className="border rounded-lg bg-card text-card-foreground shadow-sm overflow-hidden"
+            className="relative"
         >
             <CollapsibleTrigger asChild>
                 <Button
-                    variant="ghost"
-                    className="w-full flex items-center justify-between p-4 h-auto hover:bg-muted/50 rounded-none transition-colors"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs font-normal border-dashed shadow-none bg-background hover:bg-muted/50 transition-colors"
                 >
-                    <div className="flex items-center gap-2 font-medium">
-                        <Clock className="w-5 h-5 text-muted-foreground" />
-                        Submission History
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>History:</span>
                     </div>
+                    <span className="ml-2 font-medium">Submissions</span>
                     <ChevronDown
-                        className="w-5 h-5 text-muted-foreground transition-transform duration-200"
-                        style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        className={`w-3.5 h-3.5 ml-2 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                     />
                 </Button>
             </CollapsibleTrigger>
 
-            <CollapsibleContent className="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                <div className="p-4 border-t">
+            <CollapsibleContent className="absolute z-50 w-[320px] right-0 mt-2 bg-popover text-popover-foreground border rounded-xl shadow-md overflow-hidden transition-all data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
+                <div className="flex flex-col max-h-[60vh] overflow-y-auto">
                     {isLoading ? (
-                        <div className="flex justify-center py-4">
-                            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        <div className="flex justify-center py-6">
+                            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                         </div>
                     ) : history?.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4 text-sm">
+                        <p className="text-center text-muted-foreground py-6 text-sm">
                             No previous submissions found.
                         </p>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="flex flex-col">
                             {history?.map((item) => {
                                 const isCurrent = item.id === currentReviewId;
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-md ${isCurrent ? 'border-primary ring-1 ring-primary bg-primary/5' : 'bg-muted/20'
+                                        className={`relative flex flex-col gap-2 p-3 text-sm transition-colors border-b border-border/50 last:border-0 ${isCurrent ? 'bg-muted/30' : 'hover:bg-muted/50'
                                             }`}
                                     >
-                                        <div>
-                                            <p className="font-medium text-sm">
-                                                {new Date(item.createdAt).toLocaleDateString()} at{" "}
-                                                {new Date(item.createdAt).toLocaleTimeString([], {
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                })}
-                                                {isCurrent && (
-                                                    <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                                                        Current
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex flex-col gap-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-foreground">
+                                                        {new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </span>
-                                                )}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                {formatDistanceToNow(new Date(item.createdAt), {
-                                                    addSuffix: true,
-                                                })}
-                                                {" • "}
-                                                {item.commentCount} comment{item.commentCount !== 1 ? "s" : ""}
-                                            </p>
+                                                    <span className="text-muted-foreground text-xs">
+                                                        {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                    {isCurrent && (
+                                                        <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.5)]" title="Current Review" />
+                                                    )}
+                                                </div>
+                                                <span className="text-xs text-muted-foreground mt-0.5">
+                                                    {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                                                    {" • "}
+                                                    {item.commentCount} comment{item.commentCount !== 1 ? "s" : ""}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
 
-                                            <Button variant="outline" size="sm" className="h-8 text-xs" asChild>
-                                                <Link href={`/review/${exerciseId}/${item.id}`}>
-                                                    View review
-                                                </Link>
-                                            </Button>
+                                        <div className="flex items-center gap-3 mt-1.5">
+                                            <Link
+                                                href={`/review/${exerciseId}/${item.id}`}
+                                                className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                            >
+                                                View Code
+                                            </Link>
+                                            <span className="text-muted-foreground/30 text-[10px]">•</span>
                                             {isCurrent ? (
-                                                <Button variant="secondary" size="sm" className="h-8 text-xs" disabled>
-                                                    Current review
-                                                </Button>
+                                                <span className="text-xs font-medium text-muted-foreground opacity-50 cursor-not-allowed">
+                                                    Current Feedback
+                                                </span>
                                             ) : (
-                                                <Button variant="default" size="sm" className="h-8 text-xs" asChild>
-                                                    <Link href={`/review/${exerciseId}/feedback/${item.id}`}>
-                                                        See feedback
-                                                    </Link>
-                                                </Button>
+                                                <Link
+                                                    href={`/review/${exerciseId}/feedback/${item.id}`}
+                                                    className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                                                >
+                                                    Switch to Feedback
+                                                </Link>
                                             )}
                                         </div>
                                     </div>

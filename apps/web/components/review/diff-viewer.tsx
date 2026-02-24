@@ -9,7 +9,7 @@ import {
     InlineCommentEditor,
     InlineCommentThread,
 } from "./inline-comment";
-import type { DiffFile, InlineComment, Severity } from "@/lib/types";
+import type { DiffFile, InlineComment } from "@/lib/types";
 import { getLanguageFromFilename } from "@/lib/utils";
 
 interface DiffViewerProps {
@@ -18,10 +18,9 @@ interface DiffViewerProps {
     onAddComment?: (
         file_id: string,
         line_index: number,
-        text: string,
-        severity: Severity
+        text: string
     ) => void;
-    onEditComment?: (commentKey: string, newText: string, newSeverity: Severity) => void;
+    onEditComment?: (commentKey: string, newText: string) => void;
     onDeleteComment?: (commentKey: string) => void;
     fileRefs: React.RefObject<Map<number, HTMLDivElement | null>>;
     readOnly?: boolean;
@@ -55,10 +54,9 @@ export function DiffViewer({
     const handleAddComment = (
         file_id: string,
         line_index: number,
-        text: string,
-        severity: Severity
+        text: string
     ) => {
-        onAddComment?.(file_id, line_index, text, severity);
+        onAddComment?.(file_id, line_index, text);
         setActiveEditor(null);
     };
 
@@ -232,12 +230,11 @@ export function DiffViewer({
                                                     {/* Inline comment editor */}
                                                     {!readOnly && isEditorOpen && (
                                                         <InlineCommentEditor
-                                                            onSubmit={(text, severity) =>
+                                                            onSubmit={(text) =>
                                                                 handleAddComment(
                                                                     file.id,
                                                                     lineIndex,
-                                                                    text,
-                                                                    severity
+                                                                    text
                                                                 )
                                                             }
                                                             onCancel={() => setActiveEditor(null)}
@@ -248,7 +245,7 @@ export function DiffViewer({
                                                     {comment && (
                                                         <InlineCommentThread
                                                             comment={comment}
-                                                            onEdit={onEditComment ? (text: string, severity: Severity) => onEditComment(commentKey, text, severity) : undefined}
+                                                            onEdit={onEditComment ? (text: string) => onEditComment(commentKey, text) : undefined}
                                                             onDelete={onDeleteComment ? () => onDeleteComment(commentKey) : undefined}
                                                             readOnly={readOnly}
                                                         />

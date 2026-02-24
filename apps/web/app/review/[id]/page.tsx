@@ -12,6 +12,8 @@ export default async function ReviewPage({ params }: { params: Params }) {
         notFound();
     }
 
+
+
     return (
         <ReviewClient
             pr={pr}

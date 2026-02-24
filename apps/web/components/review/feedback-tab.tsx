@@ -1,18 +1,16 @@
-"use client";
-
 import Link from "next/link";
 import { Badge } from "@workspace/ui/components/badge";
 import { Separator } from "@workspace/ui/components/separator";
+import { Card, CardHeader, CardTitle, CardContent } from "@workspace/ui/components/card";
 import {
     CheckCircle2,
     XCircle,
     AlertTriangle,
     Target,
     TrendingUp,
-    Quote,
     ArrowRight,
 } from "lucide-react";
-import type { ReviewFeedback, PullRequest, ExpectedIssue } from "@/lib/types";
+import type { ReviewFeedback, PullRequest } from "@/lib/types";
 
 interface FeedbackTabProps {
     feedback: ReviewFeedback;
@@ -20,63 +18,9 @@ interface FeedbackTabProps {
 }
 
 export function FeedbackTab({ feedback, pr }: FeedbackTabProps) {
-    const scoreColor =
-        feedback.overall_score >= 80
-            ? "text-emerald-400"
-            : feedback.overall_score >= 60
-                ? "text-amber-400"
-                : "text-red-400";
-
-    const scoreRingColor =
-        feedback.overall_score >= 80
-            ? "stroke-emerald-400"
-            : feedback.overall_score >= 60
-                ? "stroke-amber-400"
-                : "stroke-red-400";
-
-    const circumference = 2 * Math.PI * 54;
-    const offset = circumference - (feedback.overall_score / 100) * circumference;
 
     return (
         <div className="max-w-3xl mx-auto space-y-8">
-            {/* Score */}
-            <div className="flex items-center justify-center pt-4">
-                <div className="relative w-36 h-36">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                        <circle
-                            cx="60"
-                            cy="60"
-                            r="54"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            className="text-muted/30"
-                        />
-                        <circle
-                            cx="60"
-                            cy="60"
-                            r="54"
-                            fill="none"
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                            strokeDasharray={circumference}
-                            strokeDashoffset={offset}
-                            className={scoreRingColor}
-                        />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className={`text-3xl font-bold tabular-nums ${scoreColor}`}>
-                            {feedback.overall_score}
-                        </span>
-                        <span className="text-xs text-muted-foreground mt-0.5">
-                            / 100
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <Separator className="bg-border/30" />
-
             {/* Expected Issues */}
             <section>
                 <div className="flex items-center gap-2 mb-4">
@@ -85,51 +29,54 @@ export function FeedbackTab({ feedback, pr }: FeedbackTabProps) {
                         Key issues you were expected to catch
                     </h2>
                 </div>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {feedback.expected_issues?.map((issue: any, i: number) => (
-                        <div
+                        <Card
                             key={i}
-                            className="border border-border/50 rounded-lg p-4 bg-card/30"
+                            className="flex flex-col border-border/50 bg-card/50 hover:bg-card hover:shadow-sm transition-all duration-200"
                         >
-                            <div className="flex items-start gap-3">
-                                <div className="mt-0.5">
-                                    {issue.severity === "critical" ? (
-                                        <XCircle className="h-4 w-4 text-red-400" />
-                                    ) : issue.severity === "suggestion" ? (
-                                        <AlertTriangle className="h-4 w-4 text-amber-400" />
-                                    ) : (
-                                        <CheckCircle2 className="h-4 w-4 text-blue-400" />
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                        <span className="text-sm font-medium">{issue.title}</span>
-                                        <Badge
-                                            variant="outline"
-                                            className={`text-[10px] px-1.5 py-0 h-4 ${issue.severity === "critical"
-                                                ? "bg-red-500/10 text-red-400 border-red-500/20"
-                                                : issue.severity === "suggestion"
-                                                    ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                                    : "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                                                }`}
-                                        >
-                                            {issue.severity}
-                                        </Badge>
+                            <CardHeader className="p-4 pb-2">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        {issue.severity === "critical" ? (
+                                            <XCircle className="h-4 w-4 text-red-500" />
+                                        ) : issue.severity === "suggestion" ? (
+                                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                        ) : (
+                                            <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                                        )}
+                                        <CardTitle className="text-sm font-medium line-clamp-1" title={issue.title}>
+                                            {issue.title}
+                                        </CardTitle>
                                     </div>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        {issue.description}
-                                    </p>
-                                    {issue.line && (
-                                        <div
-                                            className="mt-2 px-3 py-1.5 bg-muted/20 border border-border/30 rounded font-mono text-[11px] text-muted-foreground overflow-x-auto"
-                                            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                                        >
-                                            {issue.line}
-                                        </div>
-                                    )}
+                                    <Badge
+                                        variant="outline"
+                                        className={`text-[10px] px-1.5 py-0 h-5 border shrink-0 ${issue.severity === "critical"
+                                            ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+                                            : issue.severity === "suggestion"
+                                                ? "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20"
+                                                : "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"
+                                            }`}
+                                    >
+                                        {issue.severity}
+                                    </Badge>
                                 </div>
-                            </div>
-                        </div>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0 flex-1 flex flex-col justify-between">
+                                <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                                    {issue.description}
+                                </p>
+                                {issue.line && (
+                                    <div
+                                        className="mt-auto px-3 py-2 bg-muted/40 border border-border/40 rounded-md font-mono text-[11px] text-muted-foreground overflow-x-auto truncate"
+                                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                                        title={issue.line}
+                                    >
+                                        {issue.line}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             </section>
@@ -144,16 +91,16 @@ export function FeedbackTab({ feedback, pr }: FeedbackTabProps) {
                         Common things reviewers miss
                     </h2>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                     {pr.commonly_missed.map((item: string, i: number) => (
                         <div
                             key={i}
-                            className="flex items-start gap-3 px-4 py-3 bg-card/20 border border-border/30 rounded-lg"
+                            className="flex items-start gap-4 px-4 py-3 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
                         >
-                            <span className="text-xs text-muted-foreground/50 font-mono mt-0.5">
-                                {i + 1}.
-                            </span>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary mt-0.5 ring-1 ring-primary/20">
+                                {i + 1}
+                            </div>
+                            <p className="text-sm text-foreground/90 leading-relaxed pt-0.5">
                                 {item}
                             </p>
                         </div>
@@ -162,48 +109,6 @@ export function FeedbackTab({ feedback, pr }: FeedbackTabProps) {
             </section>
 
             <Separator className="bg-border/30" />
-
-            {/* Senior Example */}
-            <section>
-                <div className="flex items-center gap-2 mb-4">
-                    <Quote className="h-4 w-4 text-muted-foreground" />
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Example of a strong senior-level review
-                    </h2>
-                </div>
-                <div className="border border-border/50 rounded-lg bg-card/30 p-5">
-                    <div className="prose prose-sm prose-invert max-w-none">
-                        {pr.senior_example.split("\n\n").map((paragraph: string, i: number) => (
-                            <p
-                                key={i}
-                                className="text-sm text-foreground/80 leading-relaxed mb-3 last:mb-0"
-                            >
-                                {paragraph.split(/(\*\*[^*]+\*\*)/).map((part: string, j: number) => {
-                                    if (part.startsWith("**") && part.endsWith("**")) {
-                                        return (
-                                            <strong key={j} className="text-foreground font-semibold">
-                                                {part.slice(2, -2)}
-                                            </strong>
-                                        );
-                                    }
-                                    if (part.startsWith("`") && part.endsWith("`")) {
-                                        return (
-                                            <code
-                                                key={j}
-                                                className="px-1 py-0.5 bg-muted/30 rounded text-xs font-mono"
-                                            >
-                                                {part.slice(1, -1)}
-                                            </code>
-                                        );
-                                    }
-                                    return part;
-                                })}
-                            </p>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             <div className="flex justify-center pb-4">
                 <Link
                     href="/problems"

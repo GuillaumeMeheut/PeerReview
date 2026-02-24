@@ -36,7 +36,7 @@ export function FileTree({ files, activeFileIndex, onFileClick }: FileTreeProps)
                             )}
                         >
                             <FileCode className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <div className="min-w-0 flex-1 text-left">
+                            <div className="min-w-0 flex-1 text-left truncate">
                                 {dirPath && (
                                     <span className="text-muted-foreground/60">{dirPath}/</span>
                                 )}

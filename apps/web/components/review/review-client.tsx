@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { FileTree } from "./file-tree";
 import { DiffViewer } from "./diff-viewer";
 import { SubmitReview } from "./submit-review";
-import type { PullRequest, InlineComment, Severity } from "@/lib/types";
+import type { PullRequest, InlineComment } from "@/lib/types";
 
 type ReviewClientProps = {
     pr: PullRequest;
@@ -51,7 +51,7 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
     }, [pr.id, readOnly]);
 
     const handleAddComment = useCallback(
-        (file_id: string, line_index: number, text: string, severity: Severity) => {
+        (file_id: string, line_index: number, text: string) => {
             if (readOnly) return;
             const key = `${file_id}-0-${line_index}`;
             setComments((prev) => {
@@ -61,7 +61,7 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
                     file_id,
                     line_index,
                     text,
-                    severity,
+                    severity: "suggestion",
                     created_at: new Date().toISOString(), // DB uses String for created_at, but we can mock
                     review_id: pr.id,
                     profiles: null,
@@ -74,13 +74,13 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
     );
 
     const handleEditComment = useCallback(
-        (commentKey: string, newText: string, newSeverity: Severity) => {
+        (commentKey: string, newText: string) => {
             if (readOnly) return;
             setComments((prev) => {
                 const next = new Map(prev);
                 const comment = next.get(commentKey);
                 if (comment) {
-                    next.set(commentKey, { ...comment, text: newText, severity: newSeverity });
+                    next.set(commentKey, { ...comment, text: newText });
                 }
                 saveToLocalStorage(next);
                 return next;
