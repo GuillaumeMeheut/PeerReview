@@ -82,7 +82,7 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback }: AIFe
             {!feedback && (
                 <Card className="border-indigo-100 dark:border-indigo-900 bg-gradient-to-br from-indigo-50/50 to-white dark:from-indigo-950/20 dark:to-card">
                     <CardContent className="pt-6 flex flex-col items-center justify-center text-center gap-4 min-h-[200px]">
-                        {/* {!isLoading ? (
+                        {!isLoading ? (
                             <>
                                 <div>
                                     <h3 className="text-lg font-medium flex items-center justify-center gap-2">
@@ -92,21 +92,21 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback }: AIFe
                                     <p className="text-sm text-muted-foreground">
                                         Get personalized coaching on your code review skills.
                                     </p>
-                                </div> */}
-                        <Button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Analyze My Review
-                        </Button>
-                        {/* </> */}
-                        {/* ) : ( */}
-                        <div className="flex flex-col items-center justify-center space-y-4">
-                            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-                            <div className="text-center space-y-1">
-                                <p className="font-medium">Analyzing your review...</p>
-                                <p className="text-xs text-muted-foreground">Evaluating tone, accuracy, and constructive feedback</p>
+                                </div>
+                                <Button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                    <Sparkles className="mr-2 h-4 w-4" />
+                                    Analyze My Review
+                                </Button>
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center space-y-4">
+                                <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+                                <div className="text-center space-y-1">
+                                    <p className="font-medium">Analyzing your review...</p>
+                                    <p className="text-xs text-muted-foreground">Evaluating tone, accuracy, and constructive feedback</p>
+                                </div>
                             </div>
-                        </div>
-                        {/* )} */}
+                        )}
                     </CardContent>
                 </Card>
             )}
