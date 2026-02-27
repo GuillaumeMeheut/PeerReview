@@ -656,207 +656,252 @@ insert into public.exercise_expected_issues (id, exercise_id, title, description
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Exercise 5: Fix AI-generated Shopping Cart component
+-- Exercise 5: Implement Search functionality with URL params
 -- ---------------------------------------------------------------------------
 insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
 values (
-  'e59a8c1f-9b2f-4a39-9d93-1941dfab1111',
-  'Fix AI-generated Shopping Cart React anti-patterns',
-  'An AI generated this Shopping Cart component. It contains several common React anti-patterns frequently produced by LLMs: subtly mutating state directly, using an unnecessary `useEffect` for derived state, and using array indices as `key`s in a dynamic list.',
-  'Junior',
-  array['React', 'TypeScript'],
-  array['react', 'state-management', 'anti-patterns', 'ai-generated'],
-  'ai-assistant',
+  'e5270c3e-bc0d-4521-82d2-88849646b5a5',
+  'Implement Search functionality with URL params',
+  'This PR adds a search page that filters a list of products based on the `q` query parameter. It extracts the search input and results display into smaller client components, utilizing Next.js `useSearchParams` and `useRouter`.',
+  'Mid',
+  array['Next.js', 'React', 'TypeScript'],
+  array['performance', 'client components', 'routing'],
+  'ryan-d',
   'main',
-  'feature/ai-shopping-cart',
+  'feature/search-params',
   array[
-    'People often miss the array index being used as a key in the `.map()` because it ''works'' visually until an item is deleted from the middle of the list.',
-    'The unnecessary `useEffect` for derived state is frequently missed because it seems to successfully update the total, even though it causes an extra render cycle.'
+    'Missing `<Suspense>` boundary around the component using `useSearchParams`.',
+    'Using a standard `<a>` tag instead of Next.js `<Link>` for internal navigation, which causes a full page reload.'
   ],
-  E'Good effort on this component, but there are a few classic React anti-patterns here we need to clean up:\n\n1. **Derived State**: You don''t need a `useEffect` and a separate `total` state variable. This causes an unnecessary extra render. You can simply derive it during render: `const total = items.reduce(...)`.\n2. **State Mutation**: In `removeItem`, you''re subtly mutating the state array: `newItems.splice(index, 1)`. Use `setItems(prev => prev.filter(item => item.id !== id))` instead.\n3. **List Keys**: Using `index` as a key in `items.map((item, index) => ...)` will cause bugs when items are removed. Always use a stable identifier like `item.id`.\n\nCan you update these to follow React best practices?'
+  E'Good job breaking down the components! The UI structure makes sense, but there are two significant issues dealing with Next.js features:\n\n1. **De-optimized Rendering**: `SearchResults` uses `useSearchParams()`. Because it is not wrapped in a `<Suspense>` boundary in `page.tsx`, Next.js will de-opt the entire `SearchPage` to client-side rendering. Wrap `<SearchResults />` in `<Suspense fallback={<p>Loading...</p>}>`.\n\n2. **Full Page Reloads**: In `SearchResults.tsx`, you use a standard `<a href="...">` for the product link. This will cause a full browser reload rather than a fast SPA transition. Please import `Link` from `next/link` and replace the `<a>` tag.\n\nPlease fix these two issues!'
 ) on conflict (id) do nothing;
 
 -- Exercise 5 — Files
 insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
-  ('f68b9d2e-0a30-4b40-ae04-2052efbc2222', 'e59a8c1f-9b2f-4a39-9d93-1941dfab1111', 'src/components/ShoppingCart.tsx', 52, 0, 0)
+  ('b9a13f28-d8f1-4e1b-8c88-9d32b5f7e6a1', 'e5270c3e-bc0d-4521-82d2-88849646b5a5', 'src/app/search/page.tsx', 12, 0, 0),
+  ('c28d1e44-1fbc-49b0-a7d1-3e5f2a96c4d7', 'e5270c3e-bc0d-4521-82d2-88849646b5a5', 'src/components/SearchInput.tsx', 26, 0, 1),
+  ('d9e72b4c-9f8d-4e2b-a5d6-b8c3f7e1a6b4', 'e5270c3e-bc0d-4521-82d2-88849646b5a5', 'src/components/SearchResults.tsx', 37, 0, 2)
 on conflict (id) do nothing;
 
--- Exercise 5, File 1 — ShoppingCart.tsx chunk
+-- Exercise 5, File 1 — page.tsx chunk
 insert into public.file_chunks (id, file_id, header, lines, sort_order) values
-('a79c0e3f-1b41-4c51-bf15-3163f0cd3333', 'f68b9d2e-0a30-4b40-ae04-2052efbc2222', '@@ -0,0 +1,52 @@',
+('e4d8fbac-1f2e-4a6c-9d8a-bc3e4f7a1b5c', 'b9a13f28-d8f1-4e1b-8c88-9d32b5f7e6a1', '@@ -0,0 +1,12 @@',
 '[
-  {"type":"added","content":"import React, { useState, useEffect } from \"react\";","oldLineNumber":null,"newLineNumber":1},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":2},
-  {"type":"added","content":"interface CartItem {","oldLineNumber":null,"newLineNumber":3},
-  {"type":"added","content":"  id: string;","oldLineNumber":null,"newLineNumber":4},
-  {"type":"added","content":"  name: string;","oldLineNumber":null,"newLineNumber":5},
-  {"type":"added","content":"  price: number;","oldLineNumber":null,"newLineNumber":6},
-  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":7},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":8},
-  {"type":"added","content":"export function ShoppingCart() {","oldLineNumber":null,"newLineNumber":9},
-  {"type":"added","content":"  const [items, setItems] = useState<CartItem[]>([","oldLineNumber":null,"newLineNumber":10},
-  {"type":"added","content":"    { id: \"1\", name: \"Laptop\", price: 999 },","oldLineNumber":null,"newLineNumber":11},
-  {"type":"added","content":"    { id: \"2\", name: \"Mouse\", price: 49 },","oldLineNumber":null,"newLineNumber":12},
-  {"type":"added","content":"  ]);","oldLineNumber":null,"newLineNumber":13},
-  {"type":"added","content":"  const [total, setTotal] = useState(0);","oldLineNumber":null,"newLineNumber":14},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":15},
-  {"type":"added","content":"  // Calculate total price","oldLineNumber":null,"newLineNumber":16},
-  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":17},
-  {"type":"added","content":"    let newTotal = 0;","oldLineNumber":null,"newLineNumber":18},
-  {"type":"added","content":"    for (let i = 0; i < items.length; i++) {","oldLineNumber":null,"newLineNumber":19},
-  {"type":"added","content":"      newTotal += items[i].price;","oldLineNumber":null,"newLineNumber":20},
-  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":21},
-  {"type":"added","content":"    setTotal(newTotal);","oldLineNumber":null,"newLineNumber":22},
-  {"type":"added","content":"  }, [items]);","oldLineNumber":null,"newLineNumber":23},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":24},
-  {"type":"added","content":"  const removeItem = (index: number) => {","oldLineNumber":null,"newLineNumber":25},
-  {"type":"added","content":"    const newItems = items;","oldLineNumber":null,"newLineNumber":26},
-  {"type":"added","content":"    newItems.splice(index, 1);","oldLineNumber":null,"newLineNumber":27},
-  {"type":"added","content":"    setItems([...newItems]);","oldLineNumber":null,"newLineNumber":28},
-  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":29},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":30},
-  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":31},
-  {"type":"added","content":"    <div className=\"p-4 border rounded-lg\">","oldLineNumber":null,"newLineNumber":32},
-  {"type":"added","content":"      <h2 className=\"text-xl font-bold mb-4\">Cart ({items.length} items)</h2>","oldLineNumber":null,"newLineNumber":33},
-  {"type":"added","content":"      <ul className=\"space-y-2 mb-4\">","oldLineNumber":null,"newLineNumber":34},
-  {"type":"added","content":"        {items.map((item, index) => (","oldLineNumber":null,"newLineNumber":35},
-  {"type":"added","content":"          <li key={index} className=\"flex justify-between items-center p-2 bg-gray-50 rounded\">","oldLineNumber":null,"newLineNumber":36},
-  {"type":"added","content":"            <span>{item.name} - ${item.price}</span>","oldLineNumber":null,"newLineNumber":37},
-  {"type":"added","content":"            <button","oldLineNumber":null,"newLineNumber":38},
-  {"type":"added","content":"              onClick={() => removeItem(index)}","oldLineNumber":null,"newLineNumber":39},
-  {"type":"added","content":"              className=\"text-red-500 hover:text-red-700\"","oldLineNumber":null,"newLineNumber":40},
-  {"type":"added","content":"            >","oldLineNumber":null,"newLineNumber":41},
-  {"type":"added","content":"              Remove","oldLineNumber":null,"newLineNumber":42},
-  {"type":"added","content":"            </button>","oldLineNumber":null,"newLineNumber":43},
-  {"type":"added","content":"          </li>","oldLineNumber":null,"newLineNumber":44},
-  {"type":"added","content":"        ))}","oldLineNumber":null,"newLineNumber":45},
-  {"type":"added","content":"      </ul>","oldLineNumber":null,"newLineNumber":46},
-  {"type":"added","content":"      <div className=\"text-lg font-bold border-t pt-2\">","oldLineNumber":null,"newLineNumber":47},
-  {"type":"added","content":"        Total: ${total}","oldLineNumber":null,"newLineNumber":48},
-  {"type":"added","content":"      </div>","oldLineNumber":null,"newLineNumber":49},
-  {"type":"added","content":"    </div>","oldLineNumber":null,"newLineNumber":50},
-  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":51},
-  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":52}
+  {"type":"added","content":"import { SearchInput } from \"@/components/SearchInput\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { SearchResults } from \"@/components/SearchResults\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"export default function SearchPage() {","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"    <main className=\"p-8 max-w-4xl mx-auto\">","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"      <h1 className=\"text-3xl font-bold mb-6\">Search Products</h1>","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"      <SearchInput />","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"      <SearchResults />","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"    </main>","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":12}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 5, File 2 — SearchInput.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('f8a2c1d3-4e8b-49d7-8f5c-a2b1e3c4d5f6', 'c28d1e44-1fbc-49b0-a7d1-3e5f2a96c4d7', '@@ -0,0 +1,26 @@',
+'[
+  {"type":"added","content":"\"use client\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { useRouter, useSearchParams } from \"next/navigation\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { useState } from \"react\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"export function SearchInput() {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  const router = useRouter();","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  const searchParams = useSearchParams();","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"  const [query, setQuery] = useState(searchParams.get(\"q\") || \"\");","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"  const handleSearch = (e: React.FormEvent) => {","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"    e.preventDefault();","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"    router.push(`/search?q=${encodeURIComponent(query)}`);","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"    <form onSubmit={handleSearch} className=\"flex gap-2 mb-8\">","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"      <input ","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"        value={query}","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"        onChange={(e) => setQuery(e.target.value)}","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"        placeholder=\"Search for a product...\"","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"        className=\"border border-gray-300 p-2 rounded w-full max-w-md\"","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"      />","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"      <button type=\"submit\" className=\"bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded\">","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"        Search","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"      </button>","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"    </form>","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":27}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 5, File 3 — SearchResults.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('a1b2c3d4-e5f6-47a8-9b0c-1d2e3f4a5b6c', 'd9e72b4c-9f8d-4e2b-a5d6-b8c3f7e1a6b4', '@@ -0,0 +1,37 @@',
+'[
+  {"type":"added","content":"\"use client\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { useSearchParams } from \"next/navigation\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { useEffect, useState } from \"react\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"interface Product { id: string; name: string; description: string; price: number; }","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"export function SearchResults() {","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"  const searchParams = useSearchParams();","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"  const q = searchParams.get(\"q\");","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"  const [results, setResults] = useState<Product[]>([]);","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"  const [loading, setLoading] = useState(false);","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"    if (!q) return;","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"    setLoading(true);","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"    fetch(`/api/search?q=${encodeURIComponent(q)}`)","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"      .then(res => res.json())","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"      .then(data => {","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"        setResults(data);","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"      })","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"      .finally(() => setLoading(false));","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"  }, [q]);","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"  if (!q) return <p className=\"text-gray-500\">Enter a search term to find products.</p>;","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"  if (loading) return <p className=\"text-gray-500 animate-pulse\">Loading results for \"{q}\"...</p>;","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"    <div className=\"grid gap-4 md:grid-cols-2\">","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"      {results.map((item) => (","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"        <div key={item.id} className=\"border p-4 rounded-lg bg-white shadow-sm flex flex-col\">","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"          <h3 className=\"font-bold text-lg\">{item.name}</h3>","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"          <p className=\"text-sm text-gray-600 mt-1 mb-4 flex-grow\">{item.description}</p>","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"          <a href={`/product/${item.id}`} className=\"text-blue-600 hover:text-blue-800 font-medium self-start\">","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"            View Details →","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"          </a>","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"        </div>","oldLineNumber":null,"newLineNumber":36},
+  {"type":"added","content":"      ))}","oldLineNumber":null,"newLineNumber":37},
+  {"type":"added","content":"    </div>","oldLineNumber":null,"newLineNumber":38},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":39},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":40}
 ]'::jsonb, 0)
 on conflict (id) do nothing;
 
 -- Exercise 5 — Expected Issues
 insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
-('b80d1f40-2c52-4d62-c026-427401de4444', 'e59a8c1f-9b2f-4a39-9d93-1941dfab1111',
- 'Unnecessary `useEffect` for derived state',
- 'Using `useEffect` to calculate the total price when `items` changes causes an unnecessary extra render. This value should be derived directly during the render cycle without `useEffect`.',
- 'critical', '  useEffect(() => {', 0),
-('c91e2051-3d63-4e73-d137-538512ef5555', 'e59a8c1f-9b2f-4a39-9d93-1941dfab1111',
- 'Direct state mutation',
- 'Assigning `newItems = items` and calling `splice()` subtly mutates the original state array before spreading it. You should use `.filter()` or create a true copy first.',
- 'critical', '    newItems.splice(index, 1);', 1),
-('da2f3162-4e74-4f84-e248-649623f06666', 'e59a8c1f-9b2f-4a39-9d93-1941dfab1111',
- 'Using array index as key',
- 'Using `index` as a list key in a dynamic list where items can be removed will cause React to incorrectly reuse DOM nodes, leading to rendering bugs. `item.id` should be used instead.',
- 'critical', '          <li key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">', 2)
+('b2c3d4e5-f6a7-48b9-8c1d-2e3f4a5b6c7d', 'e5270c3e-bc0d-4521-82d2-88849646b5a5',
+ 'Missing Suspense around `useSearchParams`',
+ 'In `page.tsx`, `<SearchResults />` is not wrapped in a `<Suspense>` boundary. Because it uses `useSearchParams()`, Next.js will de-opt the entire page to client-side rendering.',
+ 'critical', '      <SearchResults />', 0),
+('c3d4e5f6-a7b8-49c0-9d2e-3f4a5b6c7d8e', 'e5270c3e-bc0d-4521-82d2-88849646b5a5',
+ 'Using regular `<a>` tag for internal navigation',
+ 'The component uses `<a href="...">` which triggers a full browser reload. For single-page application navigation, `import Link from "next/link"` and use `<Link href="...">` should be used.',
+ 'critical', '          <a href={`/product/${item.id}`} className=\"text-blue-600 hover:text-blue-800 font-medium self-start\">', 1)
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Exercise 6: Fix AI-generated Stale Closure & Infinite Loop
+-- Exercise 6: Fix polling hook and immutable state in React
 -- ---------------------------------------------------------------------------
 insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
 values (
-  'ebcd9a21-8b3e-4c40-ace4-2195f0ac7122',
-  'Fix AI-generated Stale Closure & Infinite Loop',
-  'This AI-generated search component has two major flaws common with LLM code: it uses a `setInterval` that captures a stale closure of a state variable, and it includes an inline object in a `useEffect` dependency array, triggering excessive re-renders/API calls.',
+  'a6f3b2c1-d4e5-4f6a-8b9c-0d1e2f3a4b5c',
+  'Fix polling hook and immutable state in React',
+  'This PR adds a generic `usePolling` hook to fetch data at regular intervals, and a `DataGrid` component that displays the metrics and allows client-side sorting.',
   'Mid',
   array['React', 'TypeScript'],
-  array['react', 'hooks', 'performance', 'ai-generated'],
-  'ai-assistant',
+  array['hooks', 'performance', 'state'],
+  'jessica-w',
   'main',
-  'feature/ai-stale-closure',
+  'feature/metrics-polling',
   array[
-    'The stale closure in `setInterval` or `setTimeout` is notoriously difficult to spot in code review.',
-    'Inline objects in dependency arrays look harmless but silently break referential equality, causing infinite loops.'
+    'Passing an inline function to a hook that expects it as a dependency, causing infinite re-rendering / effect thrashing.',
+    'Mutating an array directly using `.sort()` instead of creating a copy first.'
   ],
-  E'There are two critical hook issues here:\n\n1. **Stale Closure**: Your `setInterval` in `startPolling` only captures the value of `query` from the render cycle where it was created. It will forever use that initial value. You should either put the interval inside a `useEffect` with `query` as a dependency, or use a ref.\n2. **Referential Equality Loop**: In `useEffect`, you are passing `{ query, limit: 10 }` directly into the dependency array (or a function that returns it). Because it creates a *new object reference* on every render, the `useEffect` runs infinitely. Memoize the object with `useMemo` or deconstruct its primitives into the dependency array.\n\nPlease fix the infinite loop and stale data issues.'
+  E'There are some critical React anti-patterns here that will cause bugs in production:\n\n1. **Effect Thrashing (Performance)**: In `DataGrid.tsx`, `() => fetchMetrics(endpoint)` is an inline arrow function. Its reference changes on every render. Because `usePolling` includes `fetchData` in its dependency array, the interval is destroyed and recreated constantly, spamming the API. You need to wrap the fetcher in `useCallback`.\n\n2. **Direct State Mutation**: In `handleToggleSort`, calling `data.sort(...)` mutates the array directly. React relies on immutability to detect changes. Even though `setSortDesc` triggers a re-render here, mutating `data` can easily cause rendering bugs. Please spread the array first: `[...data].sort(...)`.\n\nPlease fix these issues before merging!'
 ) on conflict (id) do nothing;
 
 -- Exercise 6 — Files
 insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
-  ('d8a94e50-13a8-4bb9-bd89-8d727b1f5555', 'ebcd9a21-8b3e-4c40-ace4-2195f0ac7122', 'src/components/SearchWithPolling.tsx', 56, 0, 0)
+  ('b7c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', 'a6f3b2c1-d4e5-4f6a-8b9c-0d1e2f3a4b5c', 'src/hooks/usePolling.ts', 22, 0, 0),
+  ('c8d9e0f1-a2b3-4c4d-5e6f-7a8b9c0d1e2f', 'a6f3b2c1-d4e5-4f6a-8b9c-0d1e2f3a4b5c', 'src/components/DataGrid.tsx', 30, 0, 1)
 on conflict (id) do nothing;
 
--- Exercise 6, File 1 — SearchWithPolling.tsx chunk
+-- Exercise 6, File 1 — usePolling.ts chunk
 insert into public.file_chunks (id, file_id, header, lines, sort_order) values
-('f1a23b40-8c5d-4a1e-ab71-3312c4d57777', 'd8a94e50-13a8-4bb9-bd89-8d727b1f5555', '@@ -0,0 +1,56 @@',
+('d9e0f1a2-b3c4-4d5e-6f7a-8b9c0d1e2f3a', 'b7c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e', '@@ -0,0 +1,22 @@',
 '[
-  {"type":"added","content":"import React, { useState, useEffect } from \"react\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { useState, useEffect } from \"react\";","oldLineNumber":null,"newLineNumber":1},
   {"type":"added","content":"","oldLineNumber":null,"newLineNumber":2},
-  {"type":"added","content":"export function SearchWithPolling() {","oldLineNumber":null,"newLineNumber":3},
-  {"type":"added","content":"  const [query, setQuery] = useState(\"\");","oldLineNumber":null,"newLineNumber":4},
-  {"type":"added","content":"  const [results, setResults] = useState<string[]>([]);","oldLineNumber":null,"newLineNumber":5},
-  {"type":"added","content":"  const [isPolling, setIsPolling] = useState(false);","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"export function usePolling<T>(fetchData: () => Promise<T>, delay: number) {","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"  const [data, setData] = useState<T | null>(null);","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"    let active = true;","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"    const tick = async () => {","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"      const result = await fetchData();","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"      if (active) setData(result);","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"    };","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"    tick();","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"    const id = setInterval(tick, delay);","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"    return () => {","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"      active = false;","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"      clearInterval(id);","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"    };","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"  }, [fetchData, delay]);","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"  return data;","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":23}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 6, File 2 — DataGrid.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('e0f1a2b3-c4d5-4e6f-7a8b-9c0d1e2f3a4b', 'c8d9e0f1-a2b3-4c4d-5e6f-7a8b9c0d1e2f', '@@ -0,0 +1,30 @@',
+'[
+  {"type":"added","content":"import React, { useState } from \"react\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { usePolling } from \"../hooks/usePolling\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { fetchMetrics } from \"../api/metrics\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"export function DataGrid({ endpoint }: { endpoint: string }) {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  const [sortDesc, setSortDesc] = useState(true);","oldLineNumber":null,"newLineNumber":6},
   {"type":"added","content":"","oldLineNumber":null,"newLineNumber":7},
-  {"type":"added","content":"  const startPolling = () => {","oldLineNumber":null,"newLineNumber":8},
-  {"type":"added","content":"    setIsPolling(true);","oldLineNumber":null,"newLineNumber":9},
-  {"type":"added","content":"    setInterval(() => {","oldLineNumber":null,"newLineNumber":10},
-  {"type":"added","content":"      console.log(\"Polling for:\", query);","oldLineNumber":null,"newLineNumber":11},
-  {"type":"added","content":"      fetch(`/api/search?q=${query}`)","oldLineNumber":null,"newLineNumber":12},
-  {"type":"added","content":"        .then(res => res.json())","oldLineNumber":null,"newLineNumber":13},
-  {"type":"added","content":"        .then(data => setResults(data));","oldLineNumber":null,"newLineNumber":14},
-  {"type":"added","content":"    }, 5000);","oldLineNumber":null,"newLineNumber":15},
-  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":16},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":17},
-  {"type":"added","content":"  const searchConfig = {","oldLineNumber":null,"newLineNumber":18},
-  {"type":"added","content":"    term: query,","oldLineNumber":null,"newLineNumber":19},
-  {"type":"added","content":"    limit: 10,","oldLineNumber":null,"newLineNumber":20},
-  {"type":"added","content":"    filters: [\"active\"]","oldLineNumber":null,"newLineNumber":21},
-  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":22},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":23},
-  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":24},
-  {"type":"added","content":"    if (searchConfig.term) {","oldLineNumber":null,"newLineNumber":25},
-  {"type":"added","content":"      fetch(`/api/search?q=${searchConfig.term}&limit=${searchConfig.limit}`)","oldLineNumber":null,"newLineNumber":26},
-  {"type":"added","content":"        .then(res => res.json())","oldLineNumber":null,"newLineNumber":27},
-  {"type":"added","content":"        .then(data => setResults(data));","oldLineNumber":null,"newLineNumber":28},
-  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":29},
-  {"type":"added","content":"  }, [searchConfig]);","oldLineNumber":null,"newLineNumber":30},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":31},
-  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":32},
-  {"type":"added","content":"    <div className=\"p-4\">","oldLineNumber":null,"newLineNumber":33},
-  {"type":"added","content":"      <input","oldLineNumber":null,"newLineNumber":34},
-  {"type":"added","content":"        type=\"text\"","oldLineNumber":null,"newLineNumber":35},
-  {"type":"added","content":"        value={query}","oldLineNumber":null,"newLineNumber":36},
-  {"type":"added","content":"        onChange={(e) => setQuery(e.target.value)}","oldLineNumber":null,"newLineNumber":37},
-  {"type":"added","content":"        placeholder=\"Search...\"","oldLineNumber":null,"newLineNumber":38},
-  {"type":"added","content":"        className=\"border p-2 rounded mr-2\"","oldLineNumber":null,"newLineNumber":39},
-  {"type":"added","content":"      />","oldLineNumber":null,"newLineNumber":40},
-  {"type":"added","content":"      <button ","oldLineNumber":null,"newLineNumber":41},
-  {"type":"added","content":"        onClick={startPolling}","oldLineNumber":null,"newLineNumber":42},
-  {"type":"added","content":"        disabled={isPolling}","oldLineNumber":null,"newLineNumber":43},
-  {"type":"added","content":"        className=\"bg-blue-500 text-white p-2 rounded disabled:opacity-50\"","oldLineNumber":null,"newLineNumber":44},
-  {"type":"added","content":"      >","oldLineNumber":null,"newLineNumber":45},
-  {"type":"added","content":"        Start Polling","oldLineNumber":null,"newLineNumber":46},
-  {"type":"added","content":"      </button>","oldLineNumber":null,"newLineNumber":47},
-  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":48},
-  {"type":"added","content":"      <ul className=\"mt-4 space-y-2\">","oldLineNumber":null,"newLineNumber":49},
-  {"type":"added","content":"        {results.map((r, i) => (","oldLineNumber":null,"newLineNumber":50},
-  {"type":"added","content":"          <li key={i} className=\"p-2 bg-gray-100 rounded\">{r}</li>","oldLineNumber":null,"newLineNumber":51},
-  {"type":"added","content":"        ))}","oldLineNumber":null,"newLineNumber":52},
-  {"type":"added","content":"      </ul>","oldLineNumber":null,"newLineNumber":53},
-  {"type":"added","content":"    </div>","oldLineNumber":null,"newLineNumber":54},
-  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":55},
-  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":56}
+  {"type":"added","content":"  const data = usePolling(() => fetchMetrics(endpoint), 5000);","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"  if (!data) return <div className=\"p-4\">Loading metrics...</div>;","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"  const handleToggleSort = () => {","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"    setSortDesc(!sortDesc);","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"    data.sort((a: any, b: any) => sortDesc ? a.value - b.value : b.value - a.value);","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"    <div className=\"border rounded-lg p-6 max-w-2xl\">","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"      <div className=\"flex justify-between items-center mb-4\">","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"        <h2 className=\"text-xl font-bold\">System Metrics</h2>","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"        <button onClick={handleToggleSort} className=\"bg-gray-100 px-3 py-1 rounded\">","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"          Sort {sortDesc ? \"Ascending\" : \"Descending\"}","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"        </button>","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"      </div>","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"      <div className=\"flex flex-col gap-2\">","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"        {data.map((item: any) => (","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"          <div key={item.id} className=\"flex justify-between bg-gray-50 p-3\">","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"            <span>{item.name}</span>","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"            <span className=\"font-mono\">{item.value}</span>","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"          </div>","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"        ))}","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"      </div>","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"    </div>","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":35}
 ]'::jsonb, 0)
 on conflict (id) do nothing;
 
 -- Exercise 6 — Expected Issues
 insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
-('a1b2c3d4-e5f6-4a1b-8c2d-9e8f7a6b5c4d', 'ebcd9a21-8b3e-4c40-ace4-2195f0ac7122',
- 'Infinite Loop in useEffect',
- '`searchConfig` is redefined as a new object on every render. Because it is in the `useEffect` dependency array, it triggers the effect on every render, which calls `setResults`, triggering another render—an infinite loop.',
- 'critical', '  }, [searchConfig]);', 0),
-('b2c3d4e5-f6a1-4b2c-8d3e-0f9a8b7c6d5e', 'ebcd9a21-8b3e-4c40-ace4-2195f0ac7122',
- 'Stale Closure in setInterval',
- 'The `query` variable inside `setInterval` is bound to the render scope when `startPolling` was called. It will always be empty (or whatever its value was at the time).',
- 'critical', '    setInterval(() => {', 1),
-('c3d4e5f6-a1b2-4c3d-8e4f-1a0b9c8d7e6f', 'ebcd9a21-8b3e-4c40-ace4-2195f0ac7122',
- 'No clearInterval on unmount',
- 'The `setInterval` is never cleared. It will continue running even after the component unmounts, potentially causing memory leaks and React state warnings.',
- 'critical', '    setInterval(() => {', 2)
+('f1a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c', 'a6f3b2c1-d4e5-4f6a-8b9c-0d1e2f3a4b5c',
+ 'Effect Thrashing / Infinite Loop Risk',
+ 'The `fetchData` arrow function passed to `usePolling` is recreated on every render. Because it is in the `useEffect` dependency array in `usePolling`, the effect tears down and restarts constantly, ruining the polling interval and causing excessive API calls. Wrap it in `useCallback`.',
+ 'critical', '  const data = usePolling(() => fetchMetrics(endpoint), 5000);', 0),
+('a2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d', 'a6f3b2c1-d4e5-4f6a-8b9c-0d1e2f3a4b5c',
+ 'Direct State Mutation',
+ 'Calling `data.sort(...)` mutates the array directly. React requires state to be treated as immutable. You should clone the array first: `[...data].sort(...)`.',
+ 'critical', '    data.sort((a: any, b: any) => sortDesc ? a.value - b.value : b.value - a.value);', 1)
 on conflict (id) do nothing;

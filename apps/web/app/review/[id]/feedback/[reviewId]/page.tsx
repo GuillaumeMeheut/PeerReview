@@ -46,12 +46,18 @@ export default async function FeedbackAIPage({ params }: { params: Params }) {
             </div>
 
             <Tabs defaultValue="ai-coach" className="w-full">
-                <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-                    <TabsTrigger value="ai-coach" className="flex items-center gap-2">
+                <TabsList className="mb-8 flex h-auto w-full justify-start rounded-none border-b border-border bg-transparent p-0">
+                    <TabsTrigger
+                        value="ai-coach"
+                        className="relative flex items-center gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 pb-3 pt-2 text-sm font-medium text-muted-foreground shadow-none transition-none hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                    >
                         <Sparkles className="h-4 w-4" />
                         AI Coach Evaluation
                     </TabsTrigger>
-                    <TabsTrigger value="static-solution" className="flex items-center gap-2">
+                    <TabsTrigger
+                        value="static-solution"
+                        className="relative flex items-center gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 pb-3 pt-2 text-sm font-medium text-muted-foreground shadow-none transition-none hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                    >
                         <BookOpen className="h-4 w-4" />
                         Reference Solution
                     </TabsTrigger>

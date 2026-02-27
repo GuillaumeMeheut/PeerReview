@@ -56,6 +56,16 @@ export function PRContext({ pr }: { pr: PullRequest }) {
                     {pr.description}
                 </p>
 
+                {pr.tech_stack && pr.tech_stack.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                        {pr.tech_stack.map((tech) => (
+                            <Badge key={tech} variant="secondary" className="text-xs font-medium bg-secondary/50">
+                                {tech}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                         <FileCode className="h-3.5 w-3.5" />

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
@@ -10,15 +10,11 @@ import {
     Loader2,
     CheckCircle2,
     AlertCircle,
-    BarChart3,
     Trophy,
-    MessageSquareQuote,
     Bot,
-    User
 } from "lucide-react";
 import { LoginModal } from "@/components/auth/login-modal";
 import { Gauge } from "@workspace/ui/components/gauge";
-import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar";
 import { StructuredFeedback } from "@/lib/types";
 
 interface AIFeedbackProps {
