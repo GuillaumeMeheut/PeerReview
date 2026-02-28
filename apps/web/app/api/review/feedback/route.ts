@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
   // Deduplication: prevent concurrent AI generated responses
   const redis = Redis.fromEnv();
-  const lockKey = `ai_feedback_lock_${reviewId}`;
+  const lockKey = `ai_feedback_lock_${reviewId}_${user.id}`;
   const isLocked = await redis.set(lockKey, 'locked', { nx: true, ex: 60 });
 
   if (!isLocked) {
