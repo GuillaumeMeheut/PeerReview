@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function createDiscussion(exerciseId: string, content: string) {
     const supabase = await createClient();
@@ -21,6 +22,17 @@ export async function createDiscussion(exerciseId: string, content: string) {
         console.error("Error creating discussion:", error);
         return { error: "Failed to create discussion" };
     }
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+        distinctId: user.id,
+        event: "discussion_created",
+        properties: {
+            exercise_id: exerciseId,
+            discussion_id: data.id,
+            content_length: content.length,
+        },
+    });
 
     revalidatePath(`/review/${exerciseId}/discussions`);
     return { success: true, id: data.id as string };
@@ -249,6 +261,18 @@ export async function submitSolution({ exerciseId, description, userReviewId }: 
         console.error("Error creating solution:", error);
         return { error: "Failed to create solution" };
     }
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+        distinctId: user.id,
+        event: "solution_submitted",
+        properties: {
+            exercise_id: exerciseId,
+            solution_id: data.id,
+            has_user_review: !!userReviewId,
+            description_length: description.length,
+        },
+    });
 
     revalidatePath(`/review/${exerciseId}/solutions`);
     return { success: true, id: data.id as string };

@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { LogOut, User as UserIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
+import posthog from "posthog-js"
 
 export function UserNav({ user }: { user: User }) {
     const router = useRouter()
@@ -21,6 +22,10 @@ export function UserNav({ user }: { user: User }) {
 
 
     const handleSignOut = async () => {
+        posthog.capture("user_signed_out", {
+            user_id: user.id,
+        })
+        posthog.reset()
         await supabase.auth.signOut()
         router.refresh()
     }

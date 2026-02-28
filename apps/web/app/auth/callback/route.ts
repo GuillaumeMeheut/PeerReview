@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 
 export async function GET(request: NextRequest) {
@@ -12,12 +13,34 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createClient();
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
       return NextResponse.redirect(
         `${requestUrl.origin}/signin`,
       );
+    }
+
+    // Track auth callback completion and identify user server-side
+    if (data.user) {
+      const posthog = getPostHogClient();
+      posthog.identify({
+        distinctId: data.user.id,
+        properties: {
+          email: data.user.email,
+          name: data.user.user_metadata?.full_name,
+          avatar_url: data.user.user_metadata?.avatar_url,
+          provider: data.user.app_metadata?.provider,
+        },
+      });
+      posthog.capture({
+        distinctId: data.user.id,
+        event: "auth_callback_completed",
+        properties: {
+          provider: data.user.app_metadata?.provider,
+          is_new_user: data.user.created_at === data.user.updated_at,
+        },
+      });
     }
   }
 

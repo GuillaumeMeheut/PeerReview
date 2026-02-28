@@ -11,6 +11,7 @@ import {
 } from "@workspace/ui/components/card";
 import { ArrowRight, GitPullRequest } from "lucide-react";
 import type { PullRequest } from "@/lib/types";
+import posthog from "posthog-js";
 
 const difficultyColors: Record<string, string> = {
     Junior:
@@ -24,8 +25,21 @@ export function PRCard({ pr }: { pr: PullRequest }) {
     const totalAdditions = pr.exercise_files.reduce((sum, f) => sum + f.additions, 0);
     const totalDeletions = pr.exercise_files.reduce((sum, f) => sum + f.deletions, 0);
 
+    const handleReviewStart = () => {
+        posthog.capture("review_started", {
+            pr_id: pr.id,
+            pr_title: pr.title,
+            difficulty: pr.difficulty,
+            tech_stack: pr.tech_stack,
+            tags: pr.tags,
+            file_count: pr.exercise_files.length,
+            total_additions: totalAdditions,
+            total_deletions: totalDeletions,
+        });
+    };
+
     return (
-        <Link href={`/review/${pr.id}`} className="block group">
+        <Link href={`/review/${pr.id}`} className="block group" onClick={handleReviewStart}>
             <Card className="h-full border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-lg hover:shadow-black/5">
                 <CardHeader className="grid grid-cols-[16px_1fr] items-center gap-2.5">
                     <GitPullRequest className="h-4 w-4 text-muted-foreground shrink-0" />

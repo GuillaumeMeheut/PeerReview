@@ -9,6 +9,7 @@ import { submitReview } from "@/lib/supabase/actions";
 import { createClient } from "@/lib/supabase/client";
 import { LoginModal } from "@/components/auth/login-modal";
 import { toast } from "sonner";
+import posthog from "posthog-js";
 
 interface SubmitReviewProps {
     comments: Map<string, InlineComment>;
@@ -72,10 +73,20 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
                     return;
                 }
 
+                posthog.capture("review_submitted", {
+                    pr_id: prId,
+                    total_comments: totalComments,
+                    critical_count: criticalCount,
+                    suggestion_count: suggestionCount,
+                    nitpick_count: nitpickCount,
+                    review_id: result.reviewId,
+                });
+
                 toast.success("Review submitted successfully!");
                 router.push(`/review/${prId}/feedback/${result.reviewId}`);
             } catch (error) {
                 console.error("Error submitting review:", error);
+                posthog.captureException(error);
                 toast.error("An unexpected error occurred");
             }
         });

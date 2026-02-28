@@ -5,6 +5,7 @@ import { PRCard } from "@/components/pr-card";
 import { FilterBar } from "@/components/filter-bar";
 import { PullRequest } from "@/lib/types";
 import { X } from "lucide-react";
+import posthog from "posthog-js";
 
 interface HomeContentProps {
     pullRequests: PullRequest[];
@@ -43,6 +44,10 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
             newSet.add(tech);
         }
         setSelectedTechStack(newSet);
+        posthog.capture("problems_filtered", {
+            tech_stack: Array.from(newSet),
+            filter_count: newSet.size,
+        });
     };
 
     const clearAll = () => {

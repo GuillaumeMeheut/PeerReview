@@ -5,6 +5,7 @@ import { Button } from "@workspace/ui/components/button";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import posthog from "posthog-js";
 
 interface OAuthButtonsProps {
     nextUrl?: string;
@@ -18,6 +19,12 @@ export function OAuthButtons({ nextUrl }: OAuthButtonsProps) {
     const handleLogin = async (provider: "github" | "google") => {
         setLoading(provider);
         const supabase = createClient();
+
+        // Capture sign-in attempt
+        posthog.capture("user_signed_in", {
+            provider,
+        });
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider,
             options: {
@@ -27,6 +34,7 @@ export function OAuthButtons({ nextUrl }: OAuthButtonsProps) {
 
         if (error) {
             console.error(error);
+            posthog.captureException(error, { provider });
             toast.error(`Failed to sign in with ${provider}`);
             setLoading(null);
         }

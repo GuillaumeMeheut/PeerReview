@@ -3,6 +3,7 @@ import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
 import { ArrowRight, CheckCircle2, Code2, Cpu, GitPullRequest, Laptop, MessageSquare, ShieldCheck, Zap } from "lucide-react";
+import { UpgradeCtaButton } from "@/components/upgrade-cta-button";
 
 export default function HomePage() {
     return (
@@ -195,7 +196,7 @@ export default function HomePage() {
                             ))}
                         </ul>
                         <div className="pt-6">
-                            <Button size="lg" className="rounded-full px-8">Upgrade to Pro</Button>
+                            <UpgradeCtaButton />
                         </div>
                     </div>
                     {/* AI Features Visual Placeholder */}

@@ -5,6 +5,7 @@ import { getExercise, getReviewComments, getUser, getAIFeedbackForReview } from 
 import { createServerSupabaseClientWithServiceRole } from '@/lib/supabase/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
@@ -178,6 +179,23 @@ export async function POST(req: Request) {
     if (insertError) {
       console.error('Failed to save AI feedback:', insertError);
     }
+
+    // Track AI feedback request server-side
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: user.id,
+      event: 'ai_feedback_requested',
+      properties: {
+        pr_id: prId,
+        review_id: reviewId,
+        overall_score: response.overallScore,
+        technical_accuracy: response.metrics.technical_accuracy,
+        communication_style: response.metrics.communication_style,
+        constructiveness: response.metrics.constructiveness,
+        completeness: response.metrics.completeness,
+        comment_count: userComments.length,
+      },
+    });
 
     return Response.json(response);
   } finally {
