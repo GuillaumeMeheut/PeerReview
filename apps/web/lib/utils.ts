@@ -1,8 +1,6 @@
 import filename2prism from "filename2prism";
 
-export type Language = string;
-
-export function getLanguageFromFilename(filename: string | undefined): Language {
+export function getLanguageFromFilename(filename: string | undefined): string {
     if (!filename) return "text";
 
     const languages = filename2prism(filename);
