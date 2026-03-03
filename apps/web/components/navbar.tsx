@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GitPullRequest } from "lucide-react";
+import Image from "next/image";
 import { getUser } from "@/lib/supabase/queries";
 import { UserNav } from "@/components/auth/user-nav";
 import { Button } from "@workspace/ui/components/button";
@@ -11,9 +11,7 @@ export async function Navbar() {
         <nav className="border-b border-border/50 bg-background">
             <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 font-semibold">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-foreground">
-                        <GitPullRequest className="h-4 w-4 text-background" />
-                    </div>
+                    <Image src="/logo.png" alt="Logo" width={36} height={36} priority />
                     <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>PeerReview</span>
                 </Link>
                 <div className="flex items-center gap-6">

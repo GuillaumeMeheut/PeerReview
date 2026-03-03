@@ -61,7 +61,7 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
                     Explore Pull Requests
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl">
-                    Level up your code review skills by exploring and reviewing pull requests.
+                    Level up your code review skills by exploring and reviewing code changes.
                 </p>
             </div>
 
@@ -74,7 +74,7 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
 
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    Pull Requests
+                    Exercices
                 </h2>
                 <span className="text-xs text-muted-foreground/60">
                     {filteredPRs.length} of {pullRequests.length} available
