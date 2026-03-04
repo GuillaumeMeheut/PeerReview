@@ -336,6 +336,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           full_name: string | null
+          github_url: string | null
           id: string
           username: string | null
         }
@@ -343,6 +344,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
+          github_url?: string | null
           id: string
           username?: string | null
         }
@@ -350,10 +352,46 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
+          github_url?: string | null
           id?: string
           username?: string | null
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          user_id: string
+          is_premium: boolean
+          credits: number
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          premium_since: string | null
+        }
+        Insert: {
+          user_id: string
+          is_premium?: boolean
+          credits?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          premium_since?: string | null
+        }
+        Update: {
+          user_id?: string
+          is_premium?: boolean
+          credits?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          premium_since?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review_comments: {
         Row: {

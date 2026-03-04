@@ -43,17 +43,17 @@ export type DiffFile = ExerciseFileRow & {
 export type ExpectedIssue = ExpectedIssueRow;
 
 export type DiscussionReply = DiscussionReplyRow & {
-    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
-    author?: { name: string; avatar: string }; // Keeping as optional for backward compatibility in some places or strict mapping
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url" | "github_url"> | null;
+    author?: { name: string; avatar: string; githubUrl?: string };
 };
 
 export type Discussion = DiscussionRowDB & {
-    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url" | "github_url"> | null;
     upvotes: number;
     hasUpvoted: boolean;
     replyCount: number;
     discussion_replies?: DiscussionReply[];
-    author?: { name: string; avatar: string }; // Keep for easy mapping or backward compatibility
+    author?: { name: string; avatar: string; githubUrl?: string };
 };
 
 export type ReviewFeedback = FeedbackRow & {
@@ -90,20 +90,20 @@ export type PullRequest = ExerciseRow & {
 };
 
 export type InlineComment = ReviewCommentRow & {
-    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
-    author?: { name: string; avatar: string };
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url" | "github_url"> | null;
+    author?: { name: string; avatar: string; githubUrl?: string };
 };
 
 export type SolutionReply = SolutionReplyRow & {
-    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
-    author?: { name: string; avatar: string };
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url" | "github_url"> | null;
+    author?: { name: string; avatar: string; githubUrl?: string };
 };
 
 export type Solution = SolutionRowDB & {
-    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url"> | null;
+    profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url" | "github_url"> | null;
     upvotes: number;
     hasUpvoted?: boolean;
     replyCount: number;
     replies?: SolutionReply[];
-    author?: { name: string; avatar: string };
+    author?: { name: string; avatar: string; githubUrl?: string };
 };

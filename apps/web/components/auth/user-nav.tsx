@@ -12,7 +12,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
-import { LogOut, User as UserIcon, Sparkles } from "lucide-react"
+import { LogOut, User as UserIcon, Sparkles, CreditCard } from "lucide-react"
 import { useRouter } from "next/navigation"
 import posthog from "posthog-js"
 
@@ -33,6 +33,12 @@ export function UserNav({ user, subscription }: { user: User, subscription: User
         posthog.reset()
         await supabase.auth.signOut()
         router.refresh()
+    }
+
+    const handleManageSubscription = async () => {
+        const res = await fetch("/api/stripe/portal", { method: "POST" })
+        const data: { url?: string } = await res.json()
+        if (data.url) window.location.href = data.url
     }
 
     return (
@@ -66,6 +72,17 @@ export function UserNav({ user, subscription }: { user: User, subscription: User
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {subscription?.isPremium ? (
+                    <DropdownMenuItem onClick={handleManageSubscription}>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        <span>Manage Subscription</span>
+                    </DropdownMenuItem>
+                ) : (
+                    <DropdownMenuItem onClick={() => router.push("/premium")}>
+                        <Sparkles className="mr-2 h-4 w-4 text-indigo-400" />
+                        <span>Upgrade to Pro</span>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
