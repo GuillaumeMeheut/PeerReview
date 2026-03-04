@@ -7,6 +7,7 @@ export function getStripe(): Stripe {
         _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
             apiVersion: "2026-02-25.clover",
             typescript: true,
+            httpClient: Stripe.createFetchHttpClient(),
         });
     }
     return _stripe;
