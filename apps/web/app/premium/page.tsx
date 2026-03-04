@@ -4,7 +4,7 @@ import { motion, Variants } from "framer-motion";
 import { Check, Sparkles, Zap, Shield, Infinity, ArrowLeft } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -40,7 +40,7 @@ const proTierFeatures = [
     "Priority support",
 ];
 
-export default function PremiumPage() {
+function PremiumPageContent() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -300,5 +300,13 @@ export default function PremiumPage() {
                 </motion.div>
             </main>
         </div>
+    );
+}
+
+export default function PremiumPage() {
+    return (
+        <Suspense>
+            <PremiumPageContent />
+        </Suspense>
     );
 }
