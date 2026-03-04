@@ -48,19 +48,7 @@ export async function POST(req: Request) {
     return Response.json(existingFeedback);
   }
 
-
-
-  // Deduplication: prevent concurrent AI generated responses
-  const redis = Redis.fromEnv();
-  const lockKey = `ai_feedback_lock_${reviewId}_${user.id}`;
-  const isLocked = await redis.set(lockKey, 'locked', { nx: true, ex: 60 });
-
-  if (!isLocked) {
-    return Response.json({ error: 'AI Feedback is currently being generated for this review. Please check back in a minute.' }, { status: 409 });
-  }
-
   // Check Subscription Limits
-
   const subscription = await getUserSubscription();
 
   const isPremium = subscription?.isPremium ?? false;
@@ -71,6 +59,15 @@ export async function POST(req: Request) {
       JSON.stringify({ error: `You have run out of free AI credits. Please upgrade to premium to continue.` }),
       { status: 403, headers: { 'Content-Type': 'application/json' } }
     );
+  }
+
+  // Deduplication: prevent concurrent AI generated responses
+  const redis = Redis.fromEnv();
+  const lockKey = `ai_feedback_lock_${reviewId}_${user.id}`;
+  const isLocked = await redis.set(lockKey, 'locked', { nx: true, ex: 60 });
+
+  if (!isLocked) {
+    return Response.json({ error: 'AI Feedback is currently being generated for this review. Please check back in a minute.' }, { status: 409 });
   }
 
   try {

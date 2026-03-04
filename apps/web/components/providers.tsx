@@ -20,7 +20,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           {children}
-          <Toaster />
+          <Toaster
+            toastOptions={{
+              classNames: {
+                error: "!bg-destructive-foreground !text-foreground !border-destructive",
+                success: "!bg-primary !text-primary-foreground !border-primary",
+              },
+            }}
+          />
         </TooltipProvider>
       </QueryClientProvider>
     </NextThemesProvider>
