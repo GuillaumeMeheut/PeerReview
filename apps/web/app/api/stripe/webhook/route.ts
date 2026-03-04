@@ -84,6 +84,41 @@ export async function POST(req: Request) {
             break;
         }
 
+        case "customer.subscription.created":
+        case "customer.subscription.updated": {
+            const subscription = event.data.object as Stripe.Subscription;
+            const userId = subscription.metadata?.supabase_user_id;
+            const isActive =
+                subscription.status === "active" ||
+                subscription.status === "trialing";
+
+            if (userId) {
+                await supabase
+                    .from("subscriptions")
+                    .update({
+                        is_premium: isActive,
+                        stripe_subscription_id: subscription.id,
+                        ...(isActive
+                            ? { premium_since: new Date().toISOString() }
+                            : {}),
+                    })
+                    .eq("user_id", userId);
+            } else {
+                // Fallback: find user by subscription ID
+                await supabase
+                    .from("subscriptions")
+                    .update({
+                        is_premium: isActive,
+                        ...(isActive
+                            ? { premium_since: new Date().toISOString() }
+                            : {}),
+                    })
+                    .eq("stripe_subscription_id", subscription.id);
+            }
+
+            break;
+        }
+
         default:
             // Unhandled event type — just acknowledge
             break;
