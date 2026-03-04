@@ -13,6 +13,28 @@ export const getUser = cache(async () => {
   return { user, error };
 });
 
+export const getUserSubscription = cache(async () => {
+  const { user } = await getUser();
+  if (!user) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("is_premium, credits")
+    .eq("user_id", user.id)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Error fetching user subscription:", error);
+    return null;
+  }
+
+  return {
+    isPremium: data?.is_premium ?? false,
+    credits: data?.credits ?? 0,
+  };
+});
+
 /**
  * Fetches all exercises with their files (no chunks).
  * Suitable for the problems listing page where we need metadata + file stats.

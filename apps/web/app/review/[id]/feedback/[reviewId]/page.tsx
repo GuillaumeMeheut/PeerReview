@@ -1,4 +1,4 @@
-import { getUser, getAIFeedbackForReview, getExercise } from "@/lib/supabase/queries";
+import { getUser, getAIFeedbackForReview, getExercise, getUserSubscription } from "@/lib/supabase/queries";
 import { AIFeedback } from "@/components/review/ai-feedback";
 import type { ReviewFeedback } from "@/lib/types";
 import { SubmissionHistory } from "@/components/review/submission-history";
@@ -12,6 +12,7 @@ export default async function FeedbackAIPage({ params }: { params: Params }) {
     const { id, reviewId } = await params;
 
     const { user } = await getUser();
+    const subscription = await getUserSubscription();
     const initialFeedback = await getAIFeedbackForReview(reviewId);
 
     const pr = await getExercise(id);
@@ -63,8 +64,8 @@ export default async function FeedbackAIPage({ params }: { params: Params }) {
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="ai-coach" className="mt-0 outline-none">
-                    <AIFeedback prId={id} reviewId={reviewId} isLoggedIn={!!user} initialFeedback={initialFeedback} />
+                <TabsContent value="ai-coach" className="mt-0 outline-none data-[state=inactive]:hidden" forceMount>
+                    <AIFeedback prId={id} reviewId={reviewId} isLoggedIn={!!user} initialFeedback={initialFeedback} subscription={subscription} />
                 </TabsContent>
 
                 <TabsContent value="static-solution" className="mt-0 outline-none">

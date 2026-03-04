@@ -12,11 +12,16 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import { User } from "@supabase/supabase-js"
-import { LogOut, User as UserIcon } from "lucide-react"
+import { LogOut, User as UserIcon, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
 import posthog from "posthog-js"
 
-export function UserNav({ user }: { user: User }) {
+export interface UserSubscription {
+    isPremium: boolean;
+    credits: number;
+}
+
+export function UserNav({ user, subscription }: { user: User, subscription: UserSubscription | null }) {
     const router = useRouter()
     const supabase = createClient()
 
@@ -44,9 +49,20 @@ export function UserNav({ user }: { user: User }) {
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user.user_metadata.full_name || "User"}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
+                        <p className="text-xs leading-none text-muted-foreground pb-1">
                             {user.email}
                         </p>
+                        <div className="pt-1 border-t flex items-center gap-1.5 mt-1">
+                            {subscription?.isPremium ? (
+                                <span className="text-xs font-semibold text-indigo-500 flex items-center gap-1">
+                                    <Sparkles className="h-3 w-3" /> Premium
+                                </span>
+                            ) : (
+                                <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                                    <Sparkles className="h-3 w-3" /> {subscription?.credits ?? 0} AI Credits
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

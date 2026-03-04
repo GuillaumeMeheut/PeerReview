@@ -2,6 +2,8 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@workspace/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
@@ -22,23 +24,18 @@ interface AIFeedbackProps {
     reviewId: string;
     isLoggedIn: boolean;
     initialFeedback?: StructuredFeedback | null;
+    subscription: {
+        isPremium: boolean;
+        credits: number;
+    } | null;
 }
 
-export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback }: AIFeedbackProps) {
+export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback, subscription }: AIFeedbackProps) {
     const [feedback, setFeedback] = useState<StructuredFeedback | null>(initialFeedback || null);
-    const [isLoading, setIsLoading] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
-    const handleGenerate = async () => {
-        if (!isLoggedIn) {
-            setShowLoginModal(true);
-            return;
-        }
-
-        setIsLoading(true);
-        setFeedback(null);
-
-        try {
+    const { mutate: generateFeedback, isPending: isLoading } = useMutation({
+        mutationFn: async () => {
             const response = await fetch("/api/review/feedback", {
                 method: "POST",
                 headers: {
@@ -51,17 +48,37 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback }: AIFe
             });
 
             if (!response.ok) {
-                throw new Error("Failed to generate feedback");
+                const textData = await response.text();
+                let errorMessage = textData || "Failed to generate feedback";
+                try {
+                    const errorData = JSON.parse(textData) as { error?: string };
+                    if (errorData.error) errorMessage = errorData.error;
+                } catch (e) {
+                    // Fall back to plain text error
+                }
+                throw new Error(errorMessage);
             }
 
-            const data = await response.json() as StructuredFeedback;
+            return await response.json() as StructuredFeedback;
+        },
+        onSuccess: (data) => {
             setFeedback(data);
-        } catch (err) {
-            // @ts-expect-error err is unknown
-            console.error("Failed to generate AI feedback: " + err.message);
-        } finally {
-            setIsLoading(false);
+        },
+        onError: (err) => {
+            const errorMessage = err.message || "An unexpected error occurred";
+            console.error("Failed to generate AI feedback: " + errorMessage);
+            toast.error(errorMessage);
         }
+    });
+
+    const handleGenerate = () => {
+        if (!isLoggedIn) {
+            setShowLoginModal(true);
+            return;
+        }
+
+        setFeedback(null);
+        generateFeedback();
     };
 
 
@@ -89,10 +106,21 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback }: AIFe
                                         Get personalized coaching on your code review skills.
                                     </p>
                                 </div>
-                                <Button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                                    <Sparkles className="mr-2 h-4 w-4" />
-                                    Analyze My Review
-                                </Button>
+                                <div className="flex flex-col items-center gap-2">
+                                    <Button
+                                        onClick={handleGenerate}
+                                        disabled={!subscription?.isPremium && (subscription?.credits ?? 0) <= 0}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                    >
+                                        <Sparkles className="mr-2 h-4 w-4" />
+                                        Analyze My Review
+                                    </Button>
+                                    {!subscription?.isPremium && (
+                                        <p className="text-xs font-medium text-slate-500">
+                                            {subscription?.credits} free credits remaining
+                                        </p>
+                                    )}
+                                </div>
                             </>
                         ) : (
                             <div className="flex flex-col items-center justify-center space-y-4">

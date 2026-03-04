@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getUser } from "@/lib/supabase/queries";
+import { getUser, getUserSubscription } from "@/lib/supabase/queries";
 import { UserNav } from "@/components/auth/user-nav";
 import { Button } from "@workspace/ui/components/button";
 
 export async function Navbar() {
     const { user } = await getUser();
+    const subscription = await getUserSubscription();
 
     return (
         <nav className="border-b border-border/50 bg-background">
@@ -24,7 +25,7 @@ export async function Navbar() {
                         </Link>
                     </div>
                     {user ? (
-                        <UserNav user={user} />
+                        <UserNav user={user} subscription={subscription} />
                     ) : (
                         <div className="flex items-center gap-4">
                             <Link href="/signin" className="text-sm font-medium text-muted-foreground hover:text-foreground">

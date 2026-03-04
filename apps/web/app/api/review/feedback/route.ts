@@ -1,7 +1,7 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
-import { getExercise, getReviewComments, getUser, getAIFeedbackForReview } from '@/lib/supabase/queries';
+import { getExercise, getReviewComments, getUser, getAIFeedbackForReview, getUserSubscription } from '@/lib/supabase/queries';
 import { createServerSupabaseClientWithServiceRole } from '@/lib/supabase/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
@@ -22,14 +22,17 @@ export async function POST(req: Request) {
   );
 
   if (!success) {
-    return new Response('Too many requests. Please try again later.', {
-      status: 429,
-      headers: {
-        'X-RateLimit-Limit': limit.toString(),
-        'X-RateLimit-Remaining': remaining.toString(),
-        'X-RateLimit-Reset': reset.toString(),
-      },
-    });
+    return Response.json(
+      { error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': limit.toString(),
+          'X-RateLimit-Remaining': remaining.toString(),
+          'X-RateLimit-Reset': reset.toString(),
+        },
+      }
+    );
   }
 
   const { prId, reviewId }: { prId: string, reviewId: string } = await req.json();
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
   const { user } = await getUser();
 
   if (!user) {
-    return new Response('User not found', { status: 404 });
+    return Response.json({ error: 'User not found' }, { status: 404 });
   }
 
   const existingFeedback = await getAIFeedbackForReview(reviewId);
@@ -45,13 +48,29 @@ export async function POST(req: Request) {
     return Response.json(existingFeedback);
   }
 
+
+
   // Deduplication: prevent concurrent AI generated responses
   const redis = Redis.fromEnv();
   const lockKey = `ai_feedback_lock_${reviewId}_${user.id}`;
   const isLocked = await redis.set(lockKey, 'locked', { nx: true, ex: 60 });
 
   if (!isLocked) {
-    return new Response('AI Feedback is currently being generated for this review. Please check back in a minute.', { status: 409 });
+    return Response.json({ error: 'AI Feedback is currently being generated for this review. Please check back in a minute.' }, { status: 409 });
+  }
+
+  // Check Subscription Limits
+
+  const subscription = await getUserSubscription();
+
+  const isPremium = subscription?.isPremium ?? false;
+  const credits = subscription?.credits ?? 0;
+
+  if (!isPremium && credits <= 0) {
+    return new Response(
+      JSON.stringify({ error: `You have run out of free AI credits. Please upgrade to premium to continue.` }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -62,11 +81,11 @@ export async function POST(req: Request) {
 
 
     if (!pr) {
-      return new Response('Pull request not found', { status: 404 });
+      return Response.json({ error: 'Pull request not found' }, { status: 404 });
     }
 
     if (!userComments || userComments.length === 0) {
-      return new Response('No comments found', { status: 404 });
+      return Response.json({ error: 'No comments found' }, { status: 404 });
     }
 
     const prompt = `
@@ -161,6 +180,8 @@ export async function POST(req: Request) {
     };
 
     const supabase = createServerSupabaseClientWithServiceRole();
+
+
     const { error: insertError } = await supabase
       .from('ai_feedback_results')
       .upsert({
@@ -178,6 +199,16 @@ export async function POST(req: Request) {
 
     if (insertError) {
       console.error('Failed to save AI feedback:', insertError);
+    }
+
+    // Decrement free AI credits if not premium
+    if (!isPremium) {
+      const { error: rpcError } = await supabase.rpc('decrement_credits', {
+        target_user_id: user.id
+      });
+      if (rpcError) {
+        console.error('Failed to decrement AI credit limit:', rpcError);
+      }
     }
 
     // Track AI feedback request server-side
@@ -198,6 +229,10 @@ export async function POST(req: Request) {
     });
 
     return Response.json(response);
+  } catch (error: any) {
+    console.error('Error generating AI feedback:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred while generating feedback.';
+    return Response.json({ error: errorMessage }, { status: 500 });
   } finally {
     // Release the block
     await redis.del(lockKey);
