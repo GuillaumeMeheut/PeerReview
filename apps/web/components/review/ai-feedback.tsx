@@ -109,7 +109,7 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback, subscr
                                 <div className="flex flex-col items-center gap-2">
                                     <Button
                                         onClick={handleGenerate}
-                                        // disabled={!subscription?.isPremium && (subscription?.credits ?? 0) <= 0}
+                                        disabled={!subscription?.isPremium && (subscription?.credits ?? 0) <= 0}
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white"
                                     >
                                         <Sparkles className="mr-2 h-4 w-4" />
