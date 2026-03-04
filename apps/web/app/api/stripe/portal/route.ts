@@ -1,4 +1,4 @@
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { getUser } from "@/lib/supabase/queries";
 import { createServerSupabaseClientWithServiceRole } from "@/lib/supabase/server";
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
         customer: sub.stripe_customer_id,
         return_url: `${origin}/premium`,
     });
