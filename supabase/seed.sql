@@ -9,7 +9,7 @@
 -- ---------------------------------------------------------------------------
 -- Exercise 1: Refactor UserProfile component
 -- ---------------------------------------------------------------------------
-insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
 values (
   '15728c8e-2642-469f-a581-c0c402962e48',
   'Refactor UserProfile component and extract hooks',
@@ -24,8 +24,7 @@ values (
     'The `catch (err: any)` pattern — most reviewers focus on component structure and miss the type safety issue in the hook.',
     'Null safety: the `user` can be null when passed to child components, which would cause a runtime error.',
     'Race conditions in useEffect when userId changes before the previous fetch completes.'
-  ],
-  E'The refactoring direction is solid — extracting the fetch logic into a hook follows SRP well. However, there are a few issues:\n\n1. **Type safety**: `catch (err: any)` should be `catch (err: unknown)` with proper type narrowing: `err instanceof Error ? err.message : ''Unknown error''`.\n\n2. **Null guard removed**: The original had `if (!user) return null` which protected downstream components. Now `UserAvatar` and `UserStats` receive a potentially null `user`. Either add the guard back or make the child components handle null.\n\n3. **Race condition**: If `userId` changes rapidly, stale responses could overwrite fresh ones. Consider an AbortController or a ref-based cleanup.\n\n4. **Minor**: The inline prop type `{ userId: string }` works but a named interface is better for documentation and reuse across tests.\n\nOverall: Approve with requested changes on items 1 and 2.'
+  ]
 ) on conflict (id) do nothing;
 
 -- Exercise 1 — Files
@@ -230,7 +229,7 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------------------------
 -- Exercise 2: Add caching layer to API service
 -- ---------------------------------------------------------------------------
-insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
 values (
   'fef0e9b8-2fed-4f1c-afad-1f3b201cfb63',
   'Add caching layer to API service with retry logic',
@@ -245,8 +244,7 @@ values (
     'Unbounded cache growth — this is the most impactful issue but easy to overlook because the code looks clean.',
     'The removed `apiPost` function — deletion is easy to miss in a diff review when you''re focused on additions.',
     'Retry logic that fires on 4xx errors — the retry function itself is well-written, but the lack of error-type filtering is the real issue.'
-  ],
-  E'This PR has a good foundation — cache + retry is a common and valuable pattern. But there are several production-readiness issues:\n\n1. **Unbounded cache**: The `Map` cache has no eviction policy or max size. In production, this will grow indefinitely. Add either an LRU eviction policy or a max entry count.\n\n2. **Cache key design**: Using just the endpoint string as cache key is fragile. It should include query parameters, and potentially headers that affect response content (like `Accept-Language`).\n\n3. **Retry scope**: `withRetry` retries on ALL errors. It should only retry on network errors and 5xx responses. Add: `if (axios.isAxiosError(err) && err.response && err.response.status < 500) throw err;`\n\n4. **Breaking change**: `apiPost` was removed. If any module imports it, this PR breaks them. Either keep it, or this PR should update all callers.\n\n5. **Testing**: The singleton `apiCache` leaks state between tests. The `beforeEach(() => apiCache.clear())` is a workaround but fragile. Consider injecting the cache dependency.\n\nRequest changes on items 1, 3, and 4. The rest are improvements for a follow-up.'
+  ]
 ) on conflict (id) do nothing;
 
 -- Exercise 2 — Files
@@ -466,7 +464,7 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------------------------
 -- Exercise 3: Implement Next.js Server Actions for Guestbook
 -- ---------------------------------------------------------------------------
-insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
 values (
   '71c4c95f-6a68-450b-85d8-5bd552c67bfa',
   'Migrate Guestbook form to Next.js Server Actions',
@@ -482,8 +480,7 @@ values (
     'Lack of server-side validation or sanitation for the form data.',
     'Not calling `revalidatePath` to refresh the cached guestbook entries after submission.',
     'Improper error handling that doesn''t return a serializable state to the client.'
-  ],
-  E'The adoption of Server Actions here is a great step forward for performance. However, there are a few critical issues to address:\n\n1. **Missing Directive**: The `actions.ts` file needs the `"use server";` directive at the very top. Without it, the function will run on the client or throw an error.\n\n2. **Validation**: We are reading `formData.get(''message'')` and inserting it directly. We must validate and sanitize this input on the server, as client-side validation can be bypassed.\n\n3. **Cache Invalidation**: After a successful insertion, we need to call `revalidatePath(''/guestbook'')` so the page reflects the new entry immediately.\n\n4. **UX/Feedback**: Consider using React''s `useActionState` to handle error messages and `useFormStatus` to show a pending loading state on the submit button. Currently, the user gets no feedback if it fails.\n\nPlease address the `use server` directive, validation, and revalidation at a minimum before we merge.'
+  ]
 ) on conflict (id) do nothing;
 
 -- Exercise 3 — Files
@@ -586,7 +583,7 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------------------------
 -- Exercise 4: Optimize images with next/image
 -- ---------------------------------------------------------------------------
-insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
 values (
   'bc7eb9b7-3b95-4dc2-a725-ebd024a1b025',
   'Implement next/image for product gallery',
@@ -601,8 +598,7 @@ values (
     'Using `fill` without `position: relative` on the parent container, causing the image to break out of its layout.',
     'Missing the `sizes` attribute on responsive images, which leads to the browser downloading unnecessarily large images on mobile.',
     'Applying `priority` to all images in a map loop, which defeats the purpose of prioritizing only the LCP element.'
-  ],
-  E'Good initiative on migrating to `next/image` to improve web vitals! However, improper configuration can actually hurt performance and layout.\n\n1. **Layout Shift (CLS) Risk**: You are using `fill={true}`, but the parent `<div className="aspect-square">` needs `relative` positioning (i.e. `className="aspect-square relative"`). Otherwise, the image will fill the nearest relative ancestor or the whole page.\n\n2. **Performance (LCP) Risk**: Adding `priority={true}` inside the `.map` loop means *all* images will be preloaded. This starves the network. Only the first 1 or 2 images that are immediately visible in the viewport should have `priority`.\n\n3. **Missing `sizes` Prop**: Since you are using `fill`, Next.js doesn''t know how wide the image will be at different breakpoints. It will default to 100vw, generating very large images for mobile devices. Please add a `sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"` prop.\n\nPlease fix these issues so we can reap the performance benefits!'
+  ]
 ) on conflict (id) do nothing;
 
 -- Exercise 4 — Files
@@ -658,7 +654,7 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------------------------
 -- Exercise 5: Implement Search functionality with URL params
 -- ---------------------------------------------------------------------------
-insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
 values (
   'e5270c3e-bc0d-4521-82d2-88849646b5a5',
   'Implement Search functionality with URL params',
@@ -672,9 +668,7 @@ values (
   array[
     'Missing `<Suspense>` boundary around the component using `useSearchParams`.',
     'Using a standard `<a>` tag instead of Next.js `<Link>` for internal navigation, which causes a full page reload.'
-  ],
-  E'Good job breaking down the components! The UI structure makes sense, but there are two significant issues dealing with Next.js features:\n\n1. **De-optimized Rendering**: `SearchResults` uses `useSearchParams()`. Because it is not wrapped in a `<Suspense>` boundary in `page.tsx`, Next.js will de-opt the entire `SearchPage` to client-side rendering. Wrap `<SearchResults />` in `<Suspense fallback={<p>Loading...</p>}>`.\n\n2. **Full Page Reloads**: In `SearchResults.tsx`, you use a standard `<a href="...">` for the product link. This will cause a full browser reload rather than a fast SPA transition. Please import `Link` from `next/link` and replace the `<a>` tag.\n\nPlease fix these two issues!'
-) on conflict (id) do nothing;
+  ]) on conflict (id) do nothing;
 
 -- Exercise 5 — Files
 insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
@@ -798,7 +792,7 @@ on conflict (id) do nothing;
 -- ---------------------------------------------------------------------------
 -- Exercise 6: Fix polling hook and immutable state in React
 -- ---------------------------------------------------------------------------
-insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed, senior_example)
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
 values (
   'a6f3b2c1-d4e5-4f6a-8b9c-0d1e2f3a4b5c',
   'Fix polling hook and immutable state in React',
@@ -812,9 +806,7 @@ values (
   array[
     'Passing an inline function to a hook that expects it as a dependency, causing infinite re-rendering / effect thrashing.',
     'Mutating an array directly using `.sort()` instead of creating a copy first.'
-  ],
-  E'There are some critical React anti-patterns here that will cause bugs in production:\n\n1. **Effect Thrashing (Performance)**: In `DataGrid.tsx`, `() => fetchMetrics(endpoint)` is an inline arrow function. Its reference changes on every render. Because `usePolling` includes `fetchData` in its dependency array, the interval is destroyed and recreated constantly, spamming the API. You need to wrap the fetcher in `useCallback`.\n\n2. **Direct State Mutation**: In `handleToggleSort`, calling `data.sort(...)` mutates the array directly. React relies on immutability to detect changes. Even though `setSortDesc` triggers a re-render here, mutating `data` can easily cause rendering bugs. Please spread the array first: `[...data].sort(...)`.\n\nPlease fix these issues before merging!'
-) on conflict (id) do nothing;
+  ]) on conflict (id) do nothing;
 
 -- Exercise 6 — Files
 insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
@@ -904,4 +896,161 @@ insert into public.exercise_expected_issues (id, exercise_id, title, description
  'Direct State Mutation',
  'Calling `data.sort(...)` mutates the array directly. React requires state to be treated as immutable. You should clone the array first: `[...data].sort(...)`.',
  'critical', '    data.sort((a: any, b: any) => sortDesc ? a.value - b.value : b.value - a.value);', 1)
+on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Exercise 7: Add Stripe Checkout integration
+-- ---------------------------------------------------------------------------
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
+values (
+  'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f',
+  'Add Stripe Checkout integration for premium subscriptions',
+  'This PR adds a Stripe Checkout integration for the premium subscription tier. It introduces a new payment service, an API route to create checkout sessions, and a webhook handler to process Stripe events after successful payments.',
+  'Mid',
+  array['TypeScript', 'Next.js', 'Stripe'],
+  array['security', 'payments', 'api'],
+  'david-k',
+  'main',
+  'feature/stripe-checkout',
+  array[
+    'The Stripe secret API key is hardcoded directly in the source code instead of using environment variables — this is a critical security vulnerability.',
+    'The webhook handler does not verify the Stripe signature, meaning anyone can send fake webhook events.',
+    'No idempotency key is used when creating checkout sessions, which could lead to duplicate charges on retries.'
+  ]
+) on conflict (id) do nothing;
+
+-- Exercise 7 — Files
+insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
+  ('e4b8f2c3-5d6e-47f9-ab1c-2d3e4f5a6b7c', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f', 'src/lib/stripe.ts', 18, 0, 0),
+  ('f5c9a3d4-6e7f-48a0-bc2d-3e4f5a6b7c8d', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f', 'src/app/api/checkout/route.ts', 32, 0, 1),
+  ('a6d0b4e5-7f8a-49b1-cd3e-4f5a6b7c8d9e', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f', 'src/app/api/webhooks/stripe/route.ts', 38, 0, 2)
+on conflict (id) do nothing;
+
+-- Exercise 7, File 1 — stripe.ts chunk (Stripe client initialization with hardcoded key)
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('b7e1c5f9-8a2b-4c3d-de4f-5a6b7c8d9e0f', 'e4b8f2c3-5d6e-47f9-ab1c-2d3e4f5a6b7c', '@@ -0,0 +1,18 @@',
+'[
+  {"type":"added","content":"import Stripe from \"stripe\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"// Initialize Stripe client","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"const stripe = new Stripe(\"sk_live_51ABC123DEF456GHI789JKL012MNO345PQR678STU901VWX234YZ\", {","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  apiVersion: \"2024-04-10\",","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"export const PREMIUM_PRICE_ID = \"price_1ABC123DEF456\";","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"export async function createCheckoutSession(userId: string, email: string) {","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"  return stripe.checkout.sessions.create({","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"    customer_email: email,","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"    line_items: [{ price: PREMIUM_PRICE_ID, quantity: 1 }],","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"    mode: \"subscription\",","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"    success_url: `${process.env.NEXT_PUBLIC_URL}/success?session_id={CHECKOUT_SESSION_ID}`,","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"    cancel_url: `${process.env.NEXT_PUBLIC_URL}/pricing`,","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"    metadata: { userId },","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"  });","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":19}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 7, File 2 — checkout/route.ts chunk (API route to create session)
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('c8f2d6a0-9b3c-4d4e-ef5a-6b7c8d9e0f1a', 'f5c9a3d4-6e7f-48a0-bc2d-3e4f5a6b7c8d', '@@ -0,0 +1,32 @@',
+'[
+  {"type":"added","content":"import { NextRequest, NextResponse } from \"next/server\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { createCheckoutSession } from \"@/lib/stripe\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { getServerSession } from \"next-auth\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"import { authOptions } from \"@/lib/auth\";","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"export async function POST(req: NextRequest) {","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  try {","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"    const session = await getServerSession(authOptions);","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"    if (!session?.user) {","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"      return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 });","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"    const { priceId } = await req.json();","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"    const checkoutSession = await createCheckoutSession(","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"      session.user.id,","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"      session.user.email!","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"    );","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"    return NextResponse.json({ url: checkoutSession.url });","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"  } catch (error) {","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"    console.error(\"Checkout error:\", error);","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"    return NextResponse.json(","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"      { error: \"Failed to create checkout session\" },","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"      { status: 500 }","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"    );","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":29}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 7, File 3 — webhooks/stripe/route.ts chunk (webhook handler without signature verification)
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('d9a3e7b1-0c4d-4e5f-fa6b-7c8d9e0f1a2b', 'a6d0b4e5-7f8a-49b1-cd3e-4f5a6b7c8d9e', '@@ -0,0 +1,38 @@',
+'[
+  {"type":"added","content":"import { NextRequest, NextResponse } from \"next/server\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import Stripe from \"stripe\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { db } from \"@/lib/db\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"export async function POST(req: NextRequest) {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  const body = await req.json();","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  const event = body as Stripe.Event;","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"  try {","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"    switch (event.type) {","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"      case \"checkout.session.completed\": {","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"        const session = event.data.object as Stripe.Checkout.Session;","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"        const userId = session.metadata?.userId;","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"        if (userId) {","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"          await db.user.update({","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"            where: { id: userId },","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"            data: {","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"              isPremium: true,","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"              stripeCustomerId: session.customer as string,","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"              stripeSubscriptionId: session.subscription as string,","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"            },","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"          });","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"        }","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"        break;","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"      }","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"      default:","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"        console.log(`Unhandled event type: ${event.type}`);","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"    return NextResponse.json({ received: true });","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"  } catch (error) {","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"    console.error(\"Webhook error:\", error);","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"    return NextResponse.json({ error: \"Webhook failed\" }, { status: 500 });","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":36}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 7 — Expected Issues
+insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
+('e0b4f8c2-1d5e-4a6f-8b9c-2d3e4f5a6b7c', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f',
+ 'Hardcoded Stripe secret API key',
+ 'The Stripe secret key `sk_live_...` is hardcoded directly in the source code. This is a critical security vulnerability — secret keys should never be committed to version control. Use `process.env.STRIPE_SECRET_KEY` and store the key in environment variables.',
+ 'critical', 'const stripe = new Stripe("sk_live_51ABC123DEF456GHI789JKL012MNO345PQR678STU901VWX234YZ", {', 0),
+('f1c5a9d3-2e6f-4b7a-9c0d-3e4f5a6b7c8d', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f',
+ 'Missing webhook signature verification',
+ 'The webhook handler parses the body with `req.json()` and casts it directly to `Stripe.Event` without verifying the signature using `stripe.webhooks.constructEvent(body, sig, webhookSecret)`. This allows anyone to send fake webhook events and grant themselves premium access.',
+ 'critical', '  const event = body as Stripe.Event;', 1),
+('a2d6b0e4-3f7a-4c8b-ad1e-4f5a6b7c8d9e', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f',
+ 'Non-null assertion on user email',
+ 'Using `session.user.email!` (non-null assertion) is unsafe. If `email` is `null` or `undefined`, this will pass `undefined` to the Stripe API, which may cause an unclear error. Add a proper null check and return an error response.',
+ 'critical', '      session.user.email!', 2),
+('b3e7c1f5-4a8b-4d9c-be2f-5a6b7c8d9e0f', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f',
+ 'Unused `priceId` from request body',
+ 'The route destructures `priceId` from the request body but never uses it — `createCheckoutSession` uses the hardcoded `PREMIUM_PRICE_ID` instead. Either use the provided `priceId` (with validation) or remove it from the destructuring to avoid confusion.',
+ 'suggestion', '    const { priceId } = await req.json();', 3),
+('c4f8d2a6-5b9c-4e0d-cf3a-6b7c8d9e0f1a', 'd3a7f1b2-4c5e-46d8-9a0b-1e2f3c4d5e6f',
+ 'No idempotency key for checkout session creation',
+ 'The checkout session is created without an idempotency key. If the client retries due to a network timeout, this could create duplicate checkout sessions. Pass an `idempotencyKey` option based on the user ID and a timestamp or request ID.',
+ 'suggestion', null, 4)
 on conflict (id) do nothing;

@@ -32,16 +32,32 @@ export async function POST(req: Request) {
     let customerId = sub?.stripe_customer_id;
 
     if (!customerId) {
-        const customer = await getStripe().customers.create({
-            email: user.email,
-            metadata: { supabase_user_id: user.id },
-        });
+        const customer = await getStripe().customers.create(
+            {
+                email: user.email,
+                metadata: { supabase_user_id: user.id },
+            },
+            {
+                idempotencyKey: `customer_create_${user.id}`,
+            }
+        );
         customerId = customer.id;
 
         await supabase
             .from("subscriptions")
             .update({ stripe_customer_id: customerId })
             .eq("user_id", user.id);
+    }
+
+    // Reuse existing open Checkout Session if one exists
+    const existingSessions = await getStripe().checkout.sessions.list({
+        customer: customerId,
+        status: "open",
+    });
+
+    const existingSession = existingSessions.data[0];
+    if (existingSession?.url) {
+        return Response.json({ url: existingSession.url });
     }
 
     // Create Checkout Session
