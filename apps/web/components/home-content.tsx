@@ -70,10 +70,6 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
             <div className="max-w-7xl mx-auto px-6 pt-16 pb-24 md:pt-24 md:pb-32">
                 {/* Hero Section */}
                 <div className="relative z-10 mx-auto max-w-4xl text-center mb-16 space-y-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <Sparkles className="h-4 w-4" />
-                        <span>Ready to review?</span>
-                    </div>
                     <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-7xl bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70 animate-in fade-in slide-in-from-bottom-5 duration-700">
                         Explore <span className="text-primary">Pull Requests</span>
                     </h1>

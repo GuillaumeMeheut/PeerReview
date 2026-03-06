@@ -263,9 +263,9 @@ export function DiffViewer({
                                                         className={cn(
                                                             "flex items-stretch text-xs font-mono group relative",
                                                             line.type === "added" &&
-                                                            "bg-emerald-500/8 hover:bg-emerald-500/12",
+                                                            "bg-emerald-500/10 hover:bg-emerald-500/16",
                                                             line.type === "removed" &&
-                                                            "bg-red-500/8 hover:bg-red-500/12",
+                                                            "bg-red-500/10 hover:bg-red-500/16",
                                                             line.type === "unchanged" && "hover:bg-muted/20",
                                                             (inDragRange || isInActiveEditorRange) && "!bg-blue-500/15",
                                                             inCommentRange && !inDragRange && !isInActiveEditorRange && "!bg-blue-500/5"
