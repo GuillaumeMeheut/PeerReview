@@ -3,19 +3,22 @@ import Image from "next/image";
 import { getUser, getUserSubscription } from "@/lib/supabase/queries";
 import { UserNav } from "@/components/auth/user-nav";
 import { Button } from "@workspace/ui/components/button";
+import { MobileNav } from "@/components/mobile-nav";
 
 export async function Navbar() {
     const { user } = await getUser();
     const subscription = await getUserSubscription();
 
     return (
-        <nav className="border-b border-border/50 bg-background">
+        <nav className="border-b border-border/50 bg-background relative">
             <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 font-semibold">
                     <Image src="/logo.png" alt="Logo" width={36} height={36} priority />
                     <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>PeerReview</span>
                 </Link>
-                <div className="flex items-center gap-6">
+
+                {/* Desktop navigation */}
+                <div className="hidden md:flex items-center gap-6">
                     <div className="flex gap-6 text-sm font-medium text-muted-foreground">
                         <Link href="/problems" className="hover:text-foreground transition-colors">
                             Problems
@@ -36,6 +39,12 @@ export async function Navbar() {
                             </Button>
                         </div>
                     )}
+                </div>
+
+                {/* Mobile navigation */}
+                <div className="flex items-center gap-2 md:hidden">
+                    {user && <UserNav user={user} subscription={subscription} />}
+                    <MobileNav user={user} subscription={subscription} />
                 </div>
             </div>
         </nav>
