@@ -117,7 +117,7 @@ export async function POST(req: Request) {
     ${userComments.length === 0 ? 'No comments were made.' : userComments.map(c => `
       Comment ID: ${c.id}
       File ID: ${c.file_id}
-      Line Index: ${c.line_index}
+      Line Index: ${c.line_end_index && c.line_end_index !== c.line_index ? `${c.line_index}-${c.line_end_index}` : c.line_index}
       Comment Text: "${c.text}"
     `).join('\n')}
 

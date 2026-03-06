@@ -11,12 +11,14 @@ interface InlineCommentEditorProps {
     onSubmit: (text: string) => void;
     onCancel: () => void;
     initialText?: string;
+    lineRange?: { start: number; end: number };
 }
 
 export function InlineCommentEditor({
     onSubmit,
     onCancel,
     initialText = "",
+    lineRange,
 }: InlineCommentEditorProps) {
     const [text, setText] = useState(initialText);
 
@@ -28,6 +30,11 @@ export function InlineCommentEditor({
 
     return (
         <div className="bg-card/80 border border-border/50 rounded-md p-3 mx-4 my-2">
+            {lineRange && (
+                <div className="mb-2 text-[10px] font-mono text-blue-400">
+                    Lines {lineRange.start}–{lineRange.end}
+                </div>
+            )}
             <Textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -85,6 +92,8 @@ export function InlineCommentThread({
         );
     }
 
+    const hasRange = comment.line_end_index !== undefined && comment.line_end_index !== comment.line_index;
+
     return (
         <div className="border border-border/50 bg-card/60 rounded-md mx-4 my-2">
             <div className="p-3">
@@ -99,6 +108,9 @@ export function InlineCommentThread({
                     </Avatar>
                     <span className="text-xs font-medium">
                         {comment.author ? comment.author.name : "You"}
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground/60 ml-auto">
+                        {hasRange ? `Lines ${comment.line_index}–${comment.line_end_index}` : `Line ${comment.line_index}`}
                     </span>
                 </div>
                 <p className="text-sm text-foreground/90 leading-relaxed">

@@ -234,10 +234,9 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback, subscr
                                                                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Your Comment</span>
                                                                 <div className="flex items-center gap-2">
                                                                     <Badge variant="outline" className="text-[10px] h-5 bg-background font-mono">
-                                                                        Line {userComment.line_index}
-                                                                    </Badge>
-                                                                    <Badge variant="secondary" className="text-[10px] h-5">
-                                                                        {userComment.severity}
+                                                                        {userComment.line_end_index !== undefined && userComment.line_end_index !== userComment.line_index
+                                                                            ? `Lines ${userComment.line_index}–${userComment.line_end_index}`
+                                                                            : `Line ${userComment.line_index}`}
                                                                     </Badge>
                                                                 </div>
                                                             </div>
@@ -299,7 +298,7 @@ export function AIFeedback({ prId, reviewId, isLoggedIn, initialFeedback, subscr
                                                 <Card key={item.commentId} className="border-green-100 dark:border-green-900/30 shadow-sm flex flex-col hover:shadow-md transition-shadow">
                                                     <div className="p-3 border-b bg-slate-50/50 dark:bg-slate-900/20">
                                                         <div className="flex items-center gap-2 mb-2">
-                                                            <Badge variant="outline" className="text-[10px] h-4 font-mono bg-background">L{userComment.line_index}</Badge>
+                                                            <Badge variant="outline" className="text-[10px] h-4 font-mono bg-background">{userComment.line_end_index !== undefined && userComment.line_end_index !== userComment.line_index ? `L${userComment.line_index}-${userComment.line_end_index}` : `L${userComment.line_index}`}</Badge>
                                                             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Good Catch</span>
                                                         </div>
                                                         <p className="text-xs font-medium text-slate-700 dark:text-slate-300 italic line-clamp-3">

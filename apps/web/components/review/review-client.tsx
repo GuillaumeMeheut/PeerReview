@@ -15,7 +15,10 @@ type ReviewClientProps = {
 export function ReviewClient({ pr, readOnly = false, initialComments = [] }: ReviewClientProps) {
     const [comments, setComments] = useState<Map<string, InlineComment>>(() => {
         const map = new Map<string, InlineComment>();
-        initialComments.forEach(c => map.set(`${c.file_id}-0-${c.line_index}`, c));
+        initialComments.forEach(c => {
+            const endIdx = c.line_end_index ?? c.line_index;
+            map.set(`${c.file_id}-0-${c.line_index}-${endIdx}`, c);
+        });
         return map;
     });
 
@@ -51,18 +54,18 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
     }, [pr.id, readOnly]);
 
     const handleAddComment = useCallback(
-        (file_id: string, line_index: number, text: string) => {
+        (file_id: string, line_start: number, line_end: number, text: string) => {
             if (readOnly) return;
-            const key = `${file_id}-0-${line_index}`;
+            const key = `${file_id}-0-${line_start}-${line_end}`;
             setComments((prev) => {
                 const next = new Map(prev);
                 next.set(key, {
                     id: key,
                     file_id,
-                    line_index,
+                    line_index: line_start,
+                    line_end_index: line_end,
                     text,
-                    severity: "suggestion",
-                    created_at: new Date().toISOString(), // DB uses String for created_at, but we can mock
+                    created_at: new Date().toISOString(),
                     review_id: pr.id,
                     profiles: null,
                 });
@@ -70,7 +73,7 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
                 return next;
             });
         },
-        [readOnly, saveToLocalStorage]
+        [readOnly, saveToLocalStorage, pr.id]
     );
 
     const handleEditComment = useCallback(

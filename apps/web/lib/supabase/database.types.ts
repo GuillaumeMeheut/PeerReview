@@ -399,8 +399,8 @@ export type Database = {
           file_id: string
           id: string
           line_index: number
+          line_end_index: number | null
           review_id: string
-          severity: string
           text: string
         }
         Insert: {
@@ -408,8 +408,8 @@ export type Database = {
           file_id: string
           id?: string
           line_index: number
+          line_end_index?: number | null
           review_id: string
-          severity: string
           text: string
         }
         Update: {
@@ -417,8 +417,8 @@ export type Database = {
           file_id?: string
           id?: string
           line_index?: number
+          line_end_index?: number | null
           review_id?: string
-          severity?: string
           text?: string
         }
         Relationships: [

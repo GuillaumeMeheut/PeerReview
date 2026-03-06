@@ -363,7 +363,7 @@ export async function getSolutionComments(solutionId: string): Promise<InlineCom
           id,
           file_id,
           line_index,
-          severity,
+          line_end_index,
           text,
           review_id,
           created_at
@@ -406,7 +406,7 @@ export async function getReviewComments(reviewId: string): Promise<InlineComment
       id,
       file_id,
       line_index,
-      severity,
+      line_end_index,
       text,
       review_id,
       created_at

@@ -174,8 +174,8 @@ interface SubmitReviewParams {
     comments: {
         fileId: string;
         lineIndex: number;
+        lineEndIndex?: number;
         text: string;
-        severity: "critical" | "suggestion" | "nitpick";
     }[];
 }
 
@@ -209,8 +209,8 @@ export async function submitReview({ exerciseId, comments }: SubmitReviewParams)
             review_id: reviewId,
             file_id: c.fileId,
             line_index: c.lineIndex,
-            text: c.text,
-            severity: c.severity
+            line_end_index: c.lineEndIndex,
+            text: c.text
         }));
 
         const { error: commentsError } = await supabase

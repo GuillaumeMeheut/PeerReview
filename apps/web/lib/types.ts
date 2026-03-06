@@ -1,7 +1,6 @@
 import { Database } from "./supabase/database.types";
 
 export type Difficulty = "Junior" | "Mid" | "Senior";
-export type Severity = "critical" | "suggestion" | "nitpick";
 export type Tag =
     | "refactor"
     | "readability"
@@ -92,6 +91,7 @@ export type PullRequest = ExerciseRow & {
 export type InlineComment = ReviewCommentRow & {
     profiles: Pick<ProfileRow, "username" | "full_name" | "avatar_url" | "github_url"> | null;
     author?: { name: string; avatar: string; githubUrl?: string };
+    line_end_index?: number;
 };
 
 export type SolutionReply = SolutionReplyRow & {

@@ -25,15 +25,6 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
 
     const commentArray = Array.from(comments.values());
     const totalComments = commentArray.length;
-    const criticalCount = commentArray.filter(
-        (c) => c.severity === "critical"
-    ).length;
-    const suggestionCount = commentArray.filter(
-        (c) => c.severity === "suggestion"
-    ).length;
-    const nitpickCount = commentArray.filter(
-        (c) => c.severity === "nitpick"
-    ).length;
 
     const handleSubmit = () => {
         startTransition(async () => {
@@ -58,8 +49,8 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
                     return {
                         fileId: file.id,
                         lineIndex: c.line_index,
-                        text: c.text,
-                        severity: c.severity as "critical" | "suggestion" | "nitpick"
+                        lineEndIndex: c.line_end_index,
+                        text: c.text
                     };
                 }).filter((c): c is NonNullable<typeof c> => c !== null);
 
@@ -76,9 +67,6 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
                 posthog.capture("review_submitted", {
                     pr_id: prId,
                     total_comments: totalComments,
-                    critical_count: criticalCount,
-                    suggestion_count: suggestionCount,
-                    nitpick_count: nitpickCount,
                     review_id: result.reviewId,
                 });
 
@@ -109,25 +97,6 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
                                 {totalComments} comment{totalComments !== 1 ? "s" : ""}
                             </span>
                         </div>
-                        {totalComments > 0 && (
-                            <div className="flex items-center gap-3 text-[10px]">
-                                {criticalCount > 0 && (
-                                    <span className="text-red-400">
-                                        {criticalCount} critical
-                                    </span>
-                                )}
-                                {suggestionCount > 0 && (
-                                    <span className="text-amber-400">
-                                        {suggestionCount} suggestion{suggestionCount !== 1 ? "s" : ""}
-                                    </span>
-                                )}
-                                {nitpickCount > 0 && (
-                                    <span className="text-blue-400">
-                                        {nitpickCount} nitpick{nitpickCount !== 1 ? "s" : ""}
-                                    </span>
-                                )}
-                            </div>
-                        )}
                     </div>
 
                     <Button onClick={handleSubmit} disabled={isPending || totalComments === 0}>

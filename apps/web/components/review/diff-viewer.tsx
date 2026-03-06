@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
@@ -17,13 +17,22 @@ interface DiffViewerProps {
     comments: Map<string, InlineComment>;
     onAddComment?: (
         file_id: string,
-        line_index: number,
+        line_start: number,
+        line_end: number,
         text: string
     ) => void;
     onEditComment?: (commentKey: string, newText: string) => void;
     onDeleteComment?: (commentKey: string) => void;
     fileRefs: React.RefObject<Map<number, HTMLDivElement | null>>;
     readOnly?: boolean;
+}
+
+// Drag state scoped to a specific file
+interface DragState {
+    fileId: string;
+    chunkIndex: number;
+    startLine: number;
+    endLine: number;
 }
 
 export function DiffViewer({
@@ -37,7 +46,10 @@ export function DiffViewer({
 }: DiffViewerProps) {
     const [collapsedFiles, setCollapsedFiles] = useState<Set<number>>(new Set());
     const [activeEditor, setActiveEditor] = useState<string | null>(null);
-    const [hoveredLine, setHoveredLine] = useState<string | null>(null);
+    const [dragState, setDragState] = useState<DragState | null>(null);
+
+    // Track whether a drag is in progress via ref for the mouseup listener
+    const dragRef = useRef<DragState | null>(null);
 
     const toggleFile = (index: number) => {
         setCollapsedFiles((prev) => {
@@ -53,10 +65,11 @@ export function DiffViewer({
 
     const handleAddComment = (
         file_id: string,
-        line_index: number,
+        line_start: number,
+        line_end: number,
         text: string
     ) => {
-        onAddComment?.(file_id, line_index, text);
+        onAddComment?.(file_id, line_start, line_end, text);
         setActiveEditor(null);
     };
 
@@ -66,6 +79,98 @@ export function DiffViewer({
         },
         [fileRefs]
     );
+
+    // --- Drag selection handlers ---
+
+    const handleDragStart = useCallback(
+        (fileId: string, chunkIndex: number, lineIndex: number) => {
+            if (readOnly) return;
+            const state: DragState = {
+                fileId,
+                chunkIndex,
+                startLine: lineIndex,
+                endLine: lineIndex,
+            };
+            dragRef.current = state;
+            setDragState(state);
+        },
+        [readOnly]
+    );
+
+    const handleDragEnter = useCallback(
+        (fileId: string, chunkIndex: number, lineIndex: number) => {
+            if (!dragRef.current) return;
+            // Only allow drag within the same file and chunk
+            if (dragRef.current.fileId !== fileId || dragRef.current.chunkIndex !== chunkIndex) return;
+            const updated: DragState = {
+                ...dragRef.current,
+                endLine: lineIndex,
+            };
+            dragRef.current = updated;
+            setDragState(updated);
+        },
+        []
+    );
+
+    // Global mouseup to finalize drag
+    useEffect(() => {
+        const handleMouseUp = () => {
+            const drag = dragRef.current;
+            if (!drag) return;
+
+            const start = Math.min(drag.startLine, drag.endLine);
+            const end = Math.max(drag.startLine, drag.endLine);
+            const editorKey = `${drag.fileId}-${drag.chunkIndex}-${start}-${end}`;
+
+            dragRef.current = null;
+            setDragState(null);
+            setActiveEditor(editorKey);
+        };
+
+        document.addEventListener("mouseup", handleMouseUp);
+        return () => document.removeEventListener("mouseup", handleMouseUp);
+    }, []);
+
+    // --- Performance Optimizations ---
+    // Pre-calculate editor state once per render instead of per-line
+    const parsedActiveEditor = React.useMemo(() => {
+        if (!activeEditor) return null;
+        const parts = activeEditor.split("-");
+        if (parts.length >= 4) {
+            return {
+                fileId: parts.slice(0, -3).join("-"),
+                chunkIndex: parseInt(parts[parts.length - 3]!),
+                start: parseInt(parts[parts.length - 2]!),
+                end: parseInt(parts[parts.length - 1]!),
+            };
+        }
+        return null;
+    }, [activeEditor]);
+
+    // Pre-calculate comment lookup maps
+    const { commentsByEndingLine, linesInCommentRange } = React.useMemo(() => {
+        const endingMap = new Map<string, { key: string; comment: InlineComment }>();
+        const inRangeMap = new Set<string>();
+
+        for (const [key, comment] of comments.entries()) {
+            const parts = key.split("-");
+            if (parts.length >= 4) {
+                const fileId = parts.slice(0, -3).join("-");
+                const start = parseInt(parts[parts.length - 2]!);
+                const end = parseInt(parts[parts.length - 1]!);
+
+                // Track ending line for the thread UI
+                endingMap.set(`${fileId}-${end}`, { key, comment });
+
+                // Track every line that falls in this comment block for highlighting
+                for (let i = start; i <= end; i++) {
+                    inRangeMap.add(`${fileId}-${i}`);
+                }
+            }
+        }
+
+        return { commentsByEndingLine: endingMap, linesInCommentRange: inRangeMap };
+    }, [comments]);
 
     return (
         <div className="space-y-4">
@@ -125,10 +230,33 @@ export function DiffViewer({
                                         {/* Lines */}
                                         {chunk.lines.map((line, lineIndex) => {
                                             const lineKey = `${file.id}-${chunkIndex}-${lineIndex}`;
-                                            const commentKey = `${file.id}-0-${lineIndex}`;
-                                            const comment = comments.get(commentKey);
-                                            const isEditorOpen = activeEditor === lineKey;
-                                            const isHovered = hoveredLine === lineKey;
+                                            const isHovered = false; // Leftover variable, replaced by CSS group-hover
+
+                                            // Boolean checks
+                                            const isFileAndChunkMatch = dragState?.fileId === file.id && dragState?.chunkIndex === chunkIndex;
+                                            const inDragRange = isFileAndChunkMatch && dragState !== null && lineIndex >= Math.min(dragState.startLine, dragState.endLine) && lineIndex <= Math.max(dragState.startLine, dragState.endLine);
+
+                                            // O(1) lookups
+                                            const inCommentRange = linesInCommentRange.has(`${file.id}-${lineIndex}`);
+                                            const commentEntry = commentsByEndingLine.get(`${file.id}-${lineIndex}`);
+
+                                            // Check if the editor should open after this line
+                                            const isEditorOpen = parsedActiveEditor?.fileId === file.id
+                                                && parsedActiveEditor?.chunkIndex === chunkIndex
+                                                && parsedActiveEditor?.end === lineIndex;
+
+                                            const editorStart = parsedActiveEditor ? parsedActiveEditor.start : 0;
+                                            const editorEnd = parsedActiveEditor ? parsedActiveEditor.end : 0;
+
+                                            // Check if this line is in the active editor's selected range
+                                            const isInActiveEditorRange = parsedActiveEditor?.fileId === file.id
+                                                && parsedActiveEditor?.chunkIndex === chunkIndex
+                                                && lineIndex >= parsedActiveEditor.start
+                                                && lineIndex <= parsedActiveEditor.end;
+
+                                            // Should show the "+" button?
+                                            // Using group-hover inside className instead of React state for hover
+                                            const isOccupied = inCommentRange || isEditorOpen || !!commentEntry;
 
                                             return (
                                                 <div key={lineKey}>
@@ -139,23 +267,34 @@ export function DiffViewer({
                                                             "bg-emerald-500/8 hover:bg-emerald-500/12",
                                                             line.type === "removed" &&
                                                             "bg-red-500/8 hover:bg-red-500/12",
-                                                            line.type === "unchanged" && "hover:bg-muted/20"
+                                                            line.type === "unchanged" && "hover:bg-muted/20",
+                                                            (inDragRange || isInActiveEditorRange) && "!bg-blue-500/15",
+                                                            inCommentRange && !inDragRange && !isInActiveEditorRange && "!bg-blue-500/5"
                                                         )}
                                                         style={{
                                                             fontFamily: "'JetBrains Mono', monospace",
+                                                            userSelect: dragState ? "none" : undefined,
                                                         }}
-                                                        onMouseEnter={() => setHoveredLine(lineKey)}
-                                                        onMouseLeave={() => setHoveredLine(null)}
+                                                        onMouseEnter={() => {
+                                                            handleDragEnter(file.id, chunkIndex, lineIndex);
+                                                        }}
                                                     >
-                                                        {/* Add comment button */}
-                                                        <div className="w-8 flex items-center justify-center shrink-0 relative">
-                                                            {!readOnly && isHovered && !comment && !isEditorOpen && (
+                                                        {/* Add comment button / drag handle */}
+                                                        <div className="w-8 flex items-center justify-center shrink-0 relative opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                                                            {!readOnly && !isOccupied && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    onClick={() => setActiveEditor(lineKey)}
+                                                                    onMouseDown={(e) => {
+                                                                        e.preventDefault();
+                                                                        handleDragStart(file.id, chunkIndex, lineIndex);
+                                                                    }}
+                                                                    onClick={(e) => {
+                                                                        // Single click fallback (no drag)
+                                                                        e.preventDefault();
+                                                                    }}
                                                                     className="absolute inset-0 h-full w-full rounded-none text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 z-10 transition-colors"
-                                                                    title="Add comment"
+                                                                    title="Click and drag to select lines"
                                                                 >
                                                                     <Plus className="h-4 w-4" />
                                                                 </Button>
@@ -227,13 +366,15 @@ export function DiffViewer({
                                                         </div>
                                                     </div>
 
-                                                    {/* Inline comment editor */}
+                                                    {/* Inline comment editor (appears after last selected line) */}
                                                     {!readOnly && isEditorOpen && (
                                                         <InlineCommentEditor
+                                                            lineRange={editorStart !== editorEnd ? { start: editorStart, end: editorEnd } : undefined}
                                                             onSubmit={(text) =>
                                                                 handleAddComment(
                                                                     file.id,
-                                                                    lineIndex,
+                                                                    editorStart,
+                                                                    editorEnd,
                                                                     text
                                                                 )
                                                             }
@@ -242,11 +383,11 @@ export function DiffViewer({
                                                     )}
 
                                                     {/* Inline comment thread */}
-                                                    {comment && (
+                                                    {commentEntry && (
                                                         <InlineCommentThread
-                                                            comment={comment}
-                                                            onEdit={onEditComment ? (text: string) => onEditComment(commentKey, text) : undefined}
-                                                            onDelete={onDeleteComment ? () => onDeleteComment(commentKey) : undefined}
+                                                            comment={commentEntry.comment}
+                                                            onEdit={onEditComment ? (text: string) => onEditComment(commentEntry.key, text) : undefined}
+                                                            onDelete={onDeleteComment ? () => onDeleteComment(commentEntry.key) : undefined}
                                                             readOnly={readOnly}
                                                         />
                                                     )}
