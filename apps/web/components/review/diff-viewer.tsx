@@ -230,7 +230,6 @@ export function DiffViewer({
                                         {/* Lines */}
                                         {chunk.lines.map((line, lineIndex) => {
                                             const lineKey = `${file.id}-${chunkIndex}-${lineIndex}`;
-                                            const isHovered = false; // Leftover variable, replaced by CSS group-hover
 
                                             // Boolean checks
                                             const isFileAndChunkMatch = dragState?.fileId === file.id && dragState?.chunkIndex === chunkIndex;
