@@ -88,18 +88,18 @@ export function SubmitReview({ comments, files, prId }: SubmitReviewProps) {
                 title="Sign in to submit review"
                 description="You need to be signed in to submit your code review."
             />
-            <div className="border border-border/50 rounded-lg bg-card/30 p-5">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
+            <div className="border border-border/50 rounded-lg bg-card/30 p-4 shadow-sm">
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm">
                             <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">
+                            <span className="text-foreground font-medium">
                                 {totalComments} comment{totalComments !== 1 ? "s" : ""}
                             </span>
                         </div>
                     </div>
 
-                    <Button onClick={handleSubmit} disabled={isPending || totalComments === 0}>
+                    <Button className="w-full" onClick={handleSubmit} disabled={isPending || totalComments === 0}>
                         {isPending ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (

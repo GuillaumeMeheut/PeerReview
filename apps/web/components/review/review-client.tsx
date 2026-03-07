@@ -116,12 +116,23 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
         <div className="flex gap-4 mt-4">
             {/* Left: File Tree */}
             <div className="w-72 shrink-0">
-                <div className="sticky top-20">
-                    <FileTree
-                        files={pr.exercise_files}
-                        activeFileIndex={activeFileIndex}
-                        onFileClick={handleFileClick}
-                    />
+                <div className="sticky top-20 flex flex-col gap-4 max-h-[calc(100vh-6rem)]">
+                    <div className="overflow-y-auto min-h-0 pb-1">
+                        <FileTree
+                            files={pr.exercise_files}
+                            activeFileIndex={activeFileIndex}
+                            onFileClick={handleFileClick}
+                        />
+                    </div>
+                    {!readOnly && (
+                        <div className="shrink-0">
+                            <SubmitReview
+                                comments={comments}
+                                files={pr.exercise_files}
+                                prId={pr.id}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -138,13 +149,6 @@ export function ReviewClient({ pr, readOnly = false, initialComments = [] }: Rev
                         readOnly={readOnly}
                     />
                 </div>
-                {!readOnly && (
-                    <SubmitReview
-                        comments={comments}
-                        files={pr.exercise_files}
-                        prId={pr.id}
-                    />
-                )}
                 {readOnly && (
                     <div className="flex items-center justify-center p-8 bg-muted/20 border border-dashed border-border rounded-lg">
                         <p className="text-muted-foreground text-sm">
