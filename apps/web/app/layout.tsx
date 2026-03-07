@@ -3,9 +3,28 @@ import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import "@workspace/ui/globals.css";
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://peer-review.dev";
+
 export const metadata: Metadata = {
-    title: "PeerReview",
-    description: "Practice code reviews and refactoring like in real teams",
+    metadataBase: new URL(baseUrl),
+    title: {
+        template: "%s | PeerReview",
+        default: "PeerReview - Practice Code Reviews",
+    },
+    description: "Practice code reviews and refactoring like in real teams. Improve your engineering skills with AI-assisted feedback on real-world pull requests.",
+    openGraph: {
+        title: "PeerReview - Practice Code Reviews",
+        description: "Practice code reviews and refactoring like in real teams.",
+        url: baseUrl,
+        siteName: "PeerReview",
+        locale: "en_US",
+        type: "website",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "PeerReview - Practice Code Reviews",
+        description: "Practice code reviews and refactoring like in real teams.",
+    },
 };
 
 export default function RootLayout({
