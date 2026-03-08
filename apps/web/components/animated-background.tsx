@@ -32,7 +32,7 @@ export function AnimatedBackground() {
             temp.style.color = "color-mix(in srgb, var(--primary), transparent 80%)";
             cachedGridColor = getComputedStyle(temp).color;
 
-            temp.style.color = "color-mix(in srgb, var(--primary), transparent 50%)";
+            temp.style.color = "color-mix(in srgb, var(--primary), transparent 80%)";
             cachedPulseColor = getComputedStyle(temp).color;
 
             temp.style.color = "color-mix(in srgb, var(--primary), transparent 100%)";
@@ -60,8 +60,8 @@ export function AnimatedBackground() {
                 this.mainWidth = w;
                 this.mainHeight = h;
 
-                this.speed = 2 + Math.random() * 1.2;
-                this.length = 55 + Math.random() * 35;
+                this.speed = 0.8;
+                this.length = 100 + Math.random() * 35;
 
                 if (initial) {
                     this.x = getRandomInt(Math.ceil(w / GRID_SIZE)) * GRID_SIZE;
