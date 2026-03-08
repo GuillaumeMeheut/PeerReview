@@ -15,23 +15,29 @@ export function AnimatedBackground() {
         let animationFrameId: number;
         const GRID_SIZE = 120;
         let gridCanvas: HTMLCanvasElement | null = null;
-        let cachedGridColor = "rgba(255, 255, 255, 0.05)"; // Default subtle white
+
+        // Cache resolved colors to avoid DOM access in render loop
+        let cachedGridColor = "rgba(255, 255, 255, 0.1)";
+        let cachedPulseColor = "rgba(255, 255, 255, 0.5)";
+        let cachedPulseFadeColor = "rgba(255, 255, 255, 0.0)";
 
         const resolveColors = () => {
-            if (typeof window === 'undefined') return;
-            const root = document.documentElement;
-            const style = getComputedStyle(root);
-            const primaryHsl = style.getPropertyValue('--primary').trim();
+            if (typeof window === "undefined") return;
+            const temp = document.createElement("div");
+            temp.style.display = "none";
+            document.body.appendChild(temp);
 
-            // Just resolve once and cache. If user wants white (as seen in their recent edits), 
-            // we can stick to a subtle version of the primary or just white.
-            // Using a subtle version of the primary color for the grid.
-            if (primaryHsl && primaryHsl.includes(' ')) {
-                const parts = primaryHsl.split(' ');
-                cachedGridColor = `hsla(${parts[0]}, ${parts[1]}, ${parts[2]}, 0.08)`;
-            } else {
-                cachedGridColor = "rgba(255, 255, 255, 0.05)";
-            }
+            // Use color-mix to let the browser handle opacity calculations regardless of format (oklch, lab, rgb)
+            temp.style.color = "color-mix(in srgb, var(--primary), transparent 80%)";
+            cachedGridColor = getComputedStyle(temp).color;
+
+            temp.style.color = "color-mix(in srgb, var(--primary), transparent 50%)";
+            cachedPulseColor = getComputedStyle(temp).color;
+
+            temp.style.color = "color-mix(in srgb, var(--primary), transparent 100%)";
+            cachedPulseFadeColor = getComputedStyle(temp).color;
+
+            document.body.removeChild(temp);
         };
 
         class Pulse {
@@ -43,14 +49,14 @@ export function AnimatedBackground() {
             mainWidth: number;
             mainHeight: number;
             length: number;
-            color: string;
+            lastTurnX: number = -1;
+            lastTurnY: number = -1;
 
             constructor(mainWidth: number, mainHeight: number, initial: boolean = false) {
                 this.mainWidth = mainWidth;
                 this.mainHeight = mainHeight;
-                this.speed = 0.5 + Math.random() * 1.3;
+                this.speed = 2 + Math.random() * 1.2;
                 this.length = 55 + Math.random() * 35;
-                this.color = 'rgba(253, 255, 255,'; // User's preferred bright white
 
                 if (initial) {
                     this.x = getRandomInt(Math.ceil(mainWidth / GRID_SIZE)) * GRID_SIZE;
@@ -68,7 +74,10 @@ export function AnimatedBackground() {
             }
 
             respawn() {
-                const edge = getRandomInt(4);
+                const edge = getRandomInt(4); // 0: Top, 1: Right, 2: Bottom, 3: Left
+                this.lastTurnX = -1;
+                this.lastTurnY = -1;
+
                 switch (edge) {
                     case 0: // Top
                         this.x = getRandomInt(Math.ceil(this.mainWidth / GRID_SIZE)) * GRID_SIZE;
@@ -100,6 +109,9 @@ export function AnimatedBackground() {
             update() {
                 this.x += this.dx;
                 this.y += this.dy;
+
+                // User disabled turning logic: pulses stay straight
+
                 const buffer = this.length + 50;
                 if (this.x < -buffer || this.x > this.mainWidth + buffer || this.y < -buffer || this.y > this.mainHeight + buffer) {
                     this.respawn();
@@ -110,19 +122,17 @@ export function AnimatedBackground() {
                 const normDx = this.dx === 0 ? 0 : this.dx / Math.abs(this.dx);
                 const normDy = this.dy === 0 ? 0 : this.dy / Math.abs(this.dy);
 
-                const fullColor = this.color + ' 0.8)'; // Slightly lower opacity for subtleness
-                const fadeColor = this.color + ' 0.0)';
-
                 const gradient = ctx.createLinearGradient(
                     this.x, this.y,
                     this.x - normDx * this.length,
                     this.y - normDy * this.length
                 );
-                gradient.addColorStop(0, fullColor);
-                gradient.addColorStop(1, fadeColor);
+                // Use cached theme colors
+                gradient.addColorStop(0, cachedPulseColor);
+                gradient.addColorStop(1, cachedPulseFadeColor);
 
                 ctx.beginPath();
-                ctx.lineWidth = 1.2;
+                ctx.lineWidth = 1.5;
                 ctx.lineCap = "round";
                 ctx.moveTo(this.x, this.y);
                 ctx.lineTo(this.x - normDx * this.length, this.y - normDy * this.length);
@@ -133,43 +143,44 @@ export function AnimatedBackground() {
         }
 
         const getRandomInt = (max: number) => Math.floor(Math.random() * max);
+
         let pulses: Pulse[] = [];
+
+        const preRenderGrid = (w: number, h: number) => {
+            gridCanvas = document.createElement('canvas');
+            gridCanvas.width = w;
+            gridCanvas.height = h;
+            const gCtx = gridCanvas.getContext('2d');
+            if (!gCtx) return;
+
+            gCtx.strokeStyle = cachedGridColor;
+            gCtx.lineWidth = 1;
+
+            const nbOfEntityW = Math.ceil(w / GRID_SIZE);
+            const nbOfEntityH = Math.ceil(h / GRID_SIZE);
+
+            for (let i = 0; i <= nbOfEntityW; i++) {
+                for (let j = 0; j <= nbOfEntityH; j++) {
+                    gCtx.strokeRect(i * GRID_SIZE, j * GRID_SIZE, GRID_SIZE, GRID_SIZE);
+                }
+            }
+        };
 
         const initCanvas = () => {
             if (!canvas) return;
+            resolveColors();
             const w = window.innerWidth;
             const h = window.innerHeight;
             canvas.width = w;
             canvas.height = h;
 
-            resolveColors();
-
-            // Create offscreen canvas for the grid
-            gridCanvas = document.createElement('canvas');
-            gridCanvas.width = w;
-            gridCanvas.height = h;
-            const gridCtx = gridCanvas.getContext('2d');
-
-            if (gridCtx) {
-                gridCtx.strokeStyle = cachedGridColor;
-                gridCtx.lineWidth = 1;
-                const nbOfEntityW = Math.ceil(w / GRID_SIZE);
-                const nbOfEntityH = Math.ceil(h / GRID_SIZE);
-
-                gridCtx.beginPath();
-                for (let i = 0; i <= nbOfEntityW; i++) {
-                    gridCtx.moveTo(i * GRID_SIZE, 0);
-                    gridCtx.lineTo(i * GRID_SIZE, h);
-                }
-                for (let j = 0; j <= nbOfEntityH; j++) {
-                    gridCtx.moveTo(0, j * GRID_SIZE);
-                    gridCtx.lineTo(w, j * GRID_SIZE);
-                }
-                gridCtx.stroke();
-            }
-
+            preRenderGrid(w, h);
             pulses = [];
-            const pulseCount = Math.floor((w * h) / (GRID_SIZE * GRID_SIZE) * 2.5); // Density based
+
+            const nbOfEntityW = Math.ceil(w / GRID_SIZE);
+            const nbOfEntityH = Math.ceil(h / GRID_SIZE);
+            const pulseCount = Math.floor((nbOfEntityW * nbOfEntityH) * 0.2) + 20;
+
             for (let i = 0; i < pulseCount; i++) {
                 pulses.push(new Pulse(w, h, true));
             }
@@ -179,12 +190,11 @@ export function AnimatedBackground() {
             if (!ctx || !canvas) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw the pre-rendered grid (extremely fast)
+            // Draw cached grid
             if (gridCanvas) {
                 ctx.drawImage(gridCanvas, 0, 0);
             }
 
-            // Update and draw pulses
             for (const pulse of pulses) {
                 pulse.update();
                 pulse.draw(ctx);
@@ -193,12 +203,12 @@ export function AnimatedBackground() {
             animationFrameId = requestAnimationFrame(renderLoop);
         };
 
+        initCanvas();
+        renderLoop();
+
         const handleResize = () => {
             initCanvas();
         };
-
-        initCanvas();
-        renderLoop();
 
         window.addEventListener("resize", handleResize);
 
@@ -211,7 +221,7 @@ export function AnimatedBackground() {
     return (
         <canvas
             ref={canvasRef}
-            className="fixed inset-0 z-[-2] pointer-events-none opacity-10"
+            className="fixed inset-0 z-[-2] pointer-events-none opacity-30"
             style={{ width: "100%", height: "100%" }}
         />
     );

@@ -7,7 +7,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
     // Enables capturing unhandled exceptions via Error Tracking
     capture_exceptions: true,
     // Turn on debug in development mode
-    debug: process.env.NODE_ENV === "development",
+    debug: false,
     // Reduce cookie size to prevent 431 Request Header Fields Too Large via the Next.js rewrite
     persistence: 'localStorage+cookie',
 });
