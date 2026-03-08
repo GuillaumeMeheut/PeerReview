@@ -2,13 +2,15 @@ import { getExercises } from "@/lib/supabase/queries"
 import { HomeContent } from "@/components/home-content"
 import { Metadata } from "next";
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://peer-review.dev";
+
 export const metadata: Metadata = {
     title: "Browse PRs",
     description: "Browse realistic pull requests to practice your code review skills.",
     openGraph: {
         title: "Browse Pull Request Exercises | PeerReview",
         description: "Browse realistic pull requests to practice your code review skills. Filter by stack and difficulty.",
-        url: "https://peer-review.dev/problems",
+        url: `${baseUrl}/problems`,
         images: [{ url: "/pr-list.png", width: 1200, height: 630 }],
     },
     twitter: {
@@ -17,7 +19,7 @@ export const metadata: Metadata = {
         description: "Browse realistic pull requests to practice your code review skills.",
         images: ["/pr-list.png"],
     },
-    alternates: { canonical: "https://peer-review.dev/problems" },
+    alternates: { canonical: `${baseUrl}/problems` },
 };
 
 //every 1 hour

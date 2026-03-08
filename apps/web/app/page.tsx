@@ -1,18 +1,75 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://peer-review.dev";
+
 export const metadata: Metadata = {
-    alternates: { canonical: "https://peer-review.dev" },
+    alternates: { canonical: baseUrl },
 };
 import Image from "next/image";
 import { ArrowRight, Code, MessageSquarePlus, Zap, CheckCircle2 } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { AnimatedBackground } from "@/components/animated-background";
 import { GlowOrb } from "@/components/glow-orb";
+import { JsonLd } from "@/components/json-ld";
 
 export default function LandingPage() {
     return (
         <div className="min-h-screen text-foreground flex flex-col pt-16 selection:bg-primary/20 relative">
+            <JsonLd data={[
+                {
+                    "@context": "https://schema.org",
+                    "@type": "SoftwareApplication",
+                    "name": "PeerReview",
+                    "url": baseUrl,
+                    "description": "Practice code reviews and refactoring like in real teams. Improve your engineering skills with AI-assisted feedback on real-world pull requests.",
+                    "applicationCategory": "DeveloperApplication",
+                    "operatingSystem": "Web",
+                    "offers": [
+                        {
+                            "@type": "Offer",
+                            "name": "Free",
+                            "price": "0",
+                            "priceCurrency": "EUR",
+                            "description": "3 AI review credits per month, access to all exercises, community discussions."
+                        },
+                        {
+                            "@type": "Offer",
+                            "name": "Pro",
+                            "price": "4.99",
+                            "priceCurrency": "EUR",
+                            "priceSpecification": {
+                                "@type": "UnitPriceSpecification",
+                                "price": "4.99",
+                                "priceCurrency": "EUR",
+                                "unitCode": "MON",
+                                "billingIncrement": 1
+                            },
+                            "description": "Unlimited AI reviews, priority support."
+                        }
+                    ],
+                    "featureList": [
+                        "AI-powered code review feedback",
+                        "Inline comment interface on real pull request diffs",
+                        "Difficulty levels: Junior, Mid, Senior",
+                        "Tech stacks: React, Node.js, TypeScript, Next.js, Python, Go"
+                    ],
+                    "screenshot": `${baseUrl}/code-review.png`
+                },
+                {
+                    "@context": "https://schema.org",
+                    "@type": "Organization",
+                    "name": "PeerReview",
+                    "url": baseUrl,
+                    "logo": `${baseUrl}/logo.png`
+                },
+                {
+                    "@context": "https://schema.org",
+                    "@type": "WebSite",
+                    "name": "PeerReview",
+                    "url": baseUrl
+                }
+            ]} />
 
             {/* Animated Canvas Background */}
             <AnimatedBackground />
