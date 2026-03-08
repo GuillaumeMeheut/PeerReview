@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { FileCode, ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
@@ -22,6 +22,32 @@ type FileSystemNode = {
     additions: number;
     deletions: number;
 };
+
+function sortNodes(a: FileSystemNode, b: FileSystemNode) {
+    if (a.type !== b.type) {
+        return a.type === "folder" ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name);
+}
+
+function DiffStats({ additions, deletions, className }: { additions: number; deletions: number; className?: string }) {
+    if (additions === 0 && deletions === 0) return null;
+
+    return (
+        <div className={cn("flex items-center gap-1.5 shrink-0", className)}>
+            {additions > 0 && (
+                <span className="text-emerald-400 font-mono text-[10px]">
+                    +{additions}
+                </span>
+            )}
+            {deletions > 0 && (
+                <span className="text-red-400 font-mono text-[10px]">
+                    -{deletions}
+                </span>
+            )}
+        </div>
+    );
+}
 
 function compressNode(node: FileSystemNode) {
     if (node.type === "file" || !node.children) return;
@@ -58,14 +84,9 @@ function TreeNode({
     const [isOpen, setIsOpen] = useState(true);
 
     // Sort children: folders first, then files, both alphabetically
-    const childrenNodes = node.children
-        ? Object.values(node.children).sort((a, b) => {
-            if (a.type !== b.type) {
-                return a.type === "folder" ? -1 : 1;
-            }
-            return a.name.localeCompare(b.name);
-        })
-        : [];
+    const childrenNodes = useMemo(() => {
+        return node.children ? Object.values(node.children).sort(sortNodes) : [];
+    }, [node.children]);
 
     const paddingLeft = `${1 + level * 0.75}rem`;
 
@@ -89,18 +110,7 @@ function TreeNode({
                 <div className="min-w-0 flex-1 text-left truncate">
                     <span className="font-medium">{node.name}</span>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                    {node.additions > 0 && (
-                        <span className="text-emerald-400 font-mono text-[10px]">
-                            +{node.additions}
-                        </span>
-                    )}
-                    {node.deletions > 0 && (
-                        <span className="text-red-400 font-mono text-[10px]">
-                            -{node.deletions}
-                        </span>
-                    )}
-                </div>
+                <DiffStats additions={node.additions} deletions={node.deletions} />
             </Button>
         );
     }
@@ -128,18 +138,11 @@ function TreeNode({
                 <div className="min-w-0 flex-1 text-left truncate">
                     <span className="font-medium">{node.name}</span>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 opacity-60">
-                    {node.additions > 0 && (
-                        <span className="text-emerald-400 font-mono text-[10px]">
-                            +{node.additions}
-                        </span>
-                    )}
-                    {node.deletions > 0 && (
-                        <span className="text-red-400 font-mono text-[10px]">
-                            -{node.deletions}
-                        </span>
-                    )}
-                </div>
+                <DiffStats
+                    additions={node.additions}
+                    deletions={node.deletions}
+                    className="opacity-60"
+                />
             </Button>
             {isOpen && (
                 <div className="flex flex-col">
@@ -159,53 +162,50 @@ function TreeNode({
 }
 
 export function FileTree({ files, activeFileIndex, onFileClick }: FileTreeProps) {
-    const root: Record<string, FileSystemNode> = {};
+    const sortedRootNodes = useMemo(() => {
+        const root: Record<string, FileSystemNode> = {};
 
-    files.forEach((file, index) => {
-        const parts = file.path.split("/");
-        let currentLevel = root;
-        let currentPath = "";
+        files.forEach((file, index) => {
+            const parts = file.path.split("/");
+            let currentLevel = root;
+            let currentPath = "";
 
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            if (!part) continue;
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                if (!part) continue;
 
-            const isFile = i === parts.length - 1;
-            currentPath = currentPath ? `${currentPath}/${part}` : part;
+                const isFile = i === parts.length - 1;
+                currentPath = currentPath ? `${currentPath}/${part}` : part;
 
-            let currentNode = currentLevel[part];
-            if (!currentNode) {
-                currentNode = {
-                    type: isFile ? "file" : "folder",
-                    name: part,
-                    path: currentPath,
-                    children: isFile ? undefined : {},
-                    fileIndex: isFile ? index : undefined,
-                    file: isFile ? file : undefined,
-                    additions: 0,
-                    deletions: 0,
-                };
-                currentLevel[part] = currentNode;
+                let currentNode = currentLevel[part];
+                if (!currentNode) {
+                    currentNode = {
+                        type: isFile ? "file" : "folder",
+                        name: part,
+                        path: currentPath,
+                        children: isFile ? undefined : {},
+                        fileIndex: isFile ? index : undefined,
+                        file: isFile ? file : undefined,
+                        additions: 0,
+                        deletions: 0,
+                    };
+                    currentLevel[part] = currentNode;
+                }
+
+                currentNode.additions += file.additions;
+                currentNode.deletions += file.deletions;
+
+                if (!isFile && currentNode.children) {
+                    currentLevel = currentNode.children;
+                }
             }
+        });
 
-            currentNode.additions += file.additions;
-            currentNode.deletions += file.deletions;
+        const rootNodes = Object.values(root);
+        rootNodes.forEach(compressNode);
 
-            if (!isFile && currentNode.children) {
-                currentLevel = currentNode.children;
-            }
-        }
-    });
-
-    const rootNodes = Object.values(root);
-    rootNodes.forEach(compressNode);
-
-    const sortedRootNodes = rootNodes.sort((a, b) => {
-        if (a.type !== b.type) {
-            return a.type === "folder" ? -1 : 1;
-        }
-        return a.name.localeCompare(b.name);
-    });
+        return rootNodes.sort(sortNodes);
+    }, [files]);
 
     return (
         <div className="border border-border/50 rounded-lg bg-card/30 overflow-hidden">
