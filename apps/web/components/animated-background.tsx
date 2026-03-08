@@ -12,7 +12,9 @@ export function AnimatedBackground() {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
+        const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
         let animationFrameId: number;
+        let running = false;
         const GRID_SIZE = 130;
 
         let gridCanvas: HTMLCanvasElement | null = null;
@@ -229,18 +231,39 @@ export function AnimatedBackground() {
             initCanvas();
         }, 200);
 
-        window.addEventListener("resize", handleResize);
-
-        // Wait for layout
-        requestAnimationFrame(() => {
+        const start = () => {
+            if (running) return;
+            running = true;
             requestAnimationFrame(() => {
-                initCanvas();
-                renderLoop();
+                requestAnimationFrame(() => {
+                    initCanvas();
+                    renderLoop();
+                });
             });
-        });
+        };
+
+        const stop = () => {
+            running = false;
+            cancelAnimationFrame(animationFrameId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        };
+
+        const handleMotionChange = (e: MediaQueryListEvent | MediaQueryList) => {
+            if (e.matches) {
+                stop();
+            } else {
+                start();
+            }
+        };
+
+        window.addEventListener("resize", handleResize);
+        motionQuery.addEventListener("change", handleMotionChange as (e: MediaQueryListEvent) => void);
+
+        handleMotionChange(motionQuery);
 
         return () => {
             window.removeEventListener("resize", handleResize);
+            motionQuery.removeEventListener("change", handleMotionChange as (e: MediaQueryListEvent) => void);
             cancelAnimationFrame(animationFrameId);
         };
     }, []);

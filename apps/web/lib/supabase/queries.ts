@@ -16,12 +16,15 @@ export const getUser = cache(async () => {
 export const getUserSubscription = cache(async () => {
   const { user } = await getUser();
   if (!user) return null;
+  return getUserSubscriptionById(user.id);
+});
 
+export const getUserSubscriptionById = cache(async (userId: string) => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("subscriptions")
     .select("is_premium, credits")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
 
   if (error && error.code !== "PGRST116") {

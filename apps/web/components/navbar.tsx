@@ -1,20 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getUser, getUserSubscription } from "@/lib/supabase/queries";
+import { getUser, getUserSubscriptionById } from "@/lib/supabase/queries";
 import { UserNav } from "@/components/auth/user-nav";
 import { Button } from "@workspace/ui/components/button";
 import { MobileNav } from "@/components/mobile-nav";
 
 export async function Navbar() {
     const { user } = await getUser();
-    const subscription = await getUserSubscription();
+    const subscription = user ? await getUserSubscriptionById(user.id) : null;
 
     return (
         <nav className="border-b border-border/50 bg-background relative">
             <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2 font-semibold">
                     <Image src="/logo.png" alt="Logo" width={36} height={36} priority />
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>PeerReview</span>
+                    <span className="font-[family-name:var(--font-mono)]">PeerReview</span>
                 </Link>
 
                 {/* Desktop navigation */}

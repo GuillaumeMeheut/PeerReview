@@ -1,7 +1,20 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
 import "@workspace/ui/globals.css";
+
+const inter = Inter({
+    subsets: ["latin"],
+    display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-mono",
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://peer-review.dev";
 
@@ -37,29 +50,14 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <head>
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link
-                    rel="preconnect"
-                    href="https://fonts.gstatic.com"
-                    crossOrigin="anonymous"
-                />
-                <link
-                    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
-                    rel="stylesheet"
-                />
-            </head>
             <body
-                className="min-h-screen bg-background text-foreground antialiased"
-                style={{ fontFamily: "'Inter', sans-serif" }}
+                className={`${inter.className} ${jetbrainsMono.variable} min-h-screen bg-background text-foreground antialiased`}
             >
                 <Providers>
                     <div className="relative flex min-h-screen flex-col">
                         <Navbar />
                         <main className="flex flex-1 flex-col">{children}</main>
-                        <footer className="w-full relative z-10 border-t border-border/40 py-6 text-center text-sm text-muted-foreground mt-auto bg-background">
-                            <p>© {new Date().getFullYear()} PeerReview. All rights reserved.</p>
-                        </footer>
+                        <Footer />
                     </div>
                 </Providers>
             </body>
