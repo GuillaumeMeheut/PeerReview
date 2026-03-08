@@ -54,6 +54,9 @@ export default function RootLayout({
                     <div className="relative flex min-h-screen flex-col">
                         <Navbar />
                         <main className="flex flex-1 flex-col">{children}</main>
+                        <footer className="w-full relative z-10 border-t border-border/40 py-6 text-center text-sm text-muted-foreground mt-auto bg-background">
+                            <p>© {new Date().getFullYear()} PeerReview. All rights reserved.</p>
+                        </footer>
                     </div>
                 </Providers>
             </body>
