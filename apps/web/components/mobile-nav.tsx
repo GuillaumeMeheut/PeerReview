@@ -35,14 +35,6 @@ export function MobileNav({ user, subscription }: MobileNavProps) {
                         >
                             Problems
                         </Link>
-                        <Link
-                            href="/learn"
-                            onClick={() => setOpen(false)}
-                            className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                        >
-                            Learn
-                        </Link>
-
                         {!user && (
                             <>
                                 <div className="my-2 border-t border-border/50" />

@@ -23,9 +23,6 @@ export async function Navbar() {
                         <Link href="/problems" className="hover:text-foreground transition-colors">
                             Problems
                         </Link>
-                        <Link href="/learn" className="hover:text-foreground transition-colors">
-                            Learn
-                        </Link>
                     </div>
                     {user ? (
                         <UserNav user={user} subscription={subscription} />

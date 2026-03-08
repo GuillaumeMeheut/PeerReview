@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { PRCard } from "@/components/pr-card";
 import { FilterBar } from "@/components/filter-bar";
-import { PullRequest } from "@/lib/types";
+import { PullRequest, Difficulty } from "@/lib/types";
 import { X, Sparkles } from "lucide-react";
 import posthog from "posthog-js";
 
@@ -12,9 +12,8 @@ interface HomeContentProps {
 }
 
 export function HomeContent({ pullRequests }: HomeContentProps) {
-    const [selectedTechStack, setSelectedTechStack] = useState<Set<string>>(
-        new Set(),
-    );
+    const [selectedTechStack, setSelectedTechStack] = useState<Set<string>>(new Set());
+    const [selectedDifficulties, setSelectedDifficulties] = useState<Set<Difficulty>>(new Set());
 
     // Extract all unique options
     const techStackOptions = useMemo(() => {
@@ -31,10 +30,12 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
             const matchesTech =
                 selectedTechStack.size === 0 ||
                 pr.tech_stack.some((tech) => selectedTechStack.has(tech));
-
-            return matchesTech;
+            const matchesDifficulty =
+                selectedDifficulties.size === 0 ||
+                selectedDifficulties.has(pr.difficulty as Difficulty);
+            return matchesTech && matchesDifficulty;
         });
-    }, [pullRequests, selectedTechStack]);
+    }, [pullRequests, selectedTechStack, selectedDifficulties]);
 
     const toggleTechStack = (tech: string) => {
         const newSet = new Set(selectedTechStack);
@@ -50,8 +51,19 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
         });
     };
 
+    const toggleDifficulty = (difficulty: Difficulty) => {
+        const newSet = new Set(selectedDifficulties);
+        if (newSet.has(difficulty)) {
+            newSet.delete(difficulty);
+        } else {
+            newSet.add(difficulty);
+        }
+        setSelectedDifficulties(newSet);
+    };
+
     const clearAll = () => {
         setSelectedTechStack(new Set());
+        setSelectedDifficulties(new Set());
     };
 
     return (
@@ -83,6 +95,8 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
                         techStackOptions={techStackOptions}
                         selectedTechStack={selectedTechStack}
                         onToggleTechStack={toggleTechStack}
+                        selectedDifficulties={selectedDifficulties}
+                        onToggleDifficulty={toggleDifficulty}
                         onClearAll={clearAll}
                     />
 

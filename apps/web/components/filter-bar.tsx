@@ -8,6 +8,7 @@ import {
     SiTailwindcss, SiPostgresql, SiSupabase, SiPython, SiRedux, SiHtml5, SiCss3
 } from "react-icons/si";
 import { DiJavascript1 } from "react-icons/di";
+import type { Difficulty } from "@/lib/types";
 
 const techIcons: Record<string, React.ElementType> = {
     "React": SiReact,
@@ -24,10 +25,14 @@ const techIcons: Record<string, React.ElementType> = {
     "CSS": SiCss3,
 };
 
+const DIFFICULTIES: Difficulty[] = ["Junior", "Mid", "Senior"];
+
 interface FilterBarProps {
     techStackOptions: string[];
     selectedTechStack: Set<string>;
     onToggleTechStack: (tech: string) => void;
+    selectedDifficulties: Set<Difficulty>;
+    onToggleDifficulty: (difficulty: Difficulty) => void;
     onClearAll: () => void;
 }
 
@@ -35,9 +40,11 @@ export function FilterBar({
     techStackOptions,
     selectedTechStack,
     onToggleTechStack,
+    selectedDifficulties,
+    onToggleDifficulty,
     onClearAll,
 }: FilterBarProps) {
-    const hasFilters = selectedTechStack.size > 0;
+    const hasFilters = selectedTechStack.size > 0 || selectedDifficulties.size > 0;
 
     return (
         <div className="space-y-4 mb-8">
@@ -64,6 +71,24 @@ export function FilterBar({
                             </Badge>
                         );
                     })}
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Difficulty
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                    {DIFFICULTIES.map((difficulty) => (
+                        <Badge
+                            key={difficulty}
+                            variant={selectedDifficulties.has(difficulty) ? "default" : "secondary"}
+                            className="cursor-pointer hover:opacity-80 transition-opacity px-3 py-1 text-sm"
+                            onClick={() => onToggleDifficulty(difficulty)}
+                        >
+                            {difficulty}
+                        </Badge>
+                    ))}
                 </div>
             </div>
 

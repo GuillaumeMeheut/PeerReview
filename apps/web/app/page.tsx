@@ -87,6 +87,7 @@ export default function LandingPage() {
                                     src="/pr-list.png"
                                     alt="Pull request list interface"
                                     fill
+                                    sizes="(max-width: 768px) 100vw, 60vw"
                                     className="object-cover object-left-top transition-transform duration-700 group-hover:scale-[1.02]"
                                     priority
                                 />
@@ -110,6 +111,7 @@ export default function LandingPage() {
                                     src="/code-review.png"
                                     alt="Code review interface"
                                     fill
+                                    sizes="(max-width: 768px) 100vw, 60vw"
                                     className="object-cover object-left-top transition-transform duration-700 group-hover:scale-[1.02]"
                                 />
                             </div>
