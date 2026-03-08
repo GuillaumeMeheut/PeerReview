@@ -74,7 +74,7 @@ DB row types are auto-generated in `lib/supabase/database.types.ts` and re-expor
 
 ### Main Web App Routes (`apps/web/app/`)
 
-- `/problems` — browse exercises (PR listing)
+- `/explore` — browse exercises (PR listing)
 - `/review/[id]` — review an exercise (diff viewer + inline comments)
 - `/review/[id]/[reviewId]` — view a submitted review
 - `/review/[id]/discussions` — community discussions

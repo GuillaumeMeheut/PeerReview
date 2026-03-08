@@ -34,7 +34,7 @@ export function ReviewLayout({
                 <header className="border-b border-border/50 sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
                     <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-4">
                         <Link
-                            href="/problems"
+                            href="/explore"
                             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                         >
                             <ArrowLeft className="h-4 w-4" />

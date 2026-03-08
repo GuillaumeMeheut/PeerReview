@@ -99,7 +99,7 @@ export default function LandingPage() {
 
                         <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
                             <Button asChild size="lg" className="h-12 px-8 rounded-full text-base group relative overflow-hidden transition-all hover:shadow-[0_0_20px_hsl(var(--primary)/30)]">
-                                <Link href="/problems">
+                                <Link href="/explore">
                                     <span className="relative z-10 flex items-center">
                                         Start Reviewing
                                         <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -107,7 +107,7 @@ export default function LandingPage() {
                                 </Link>
                             </Button>
                             <Button asChild variant="outline" size="lg" className="h-12 px-8 rounded-full text-base bg-background/50 backdrop-blur-sm transition-all hover:bg-muted/80 border-border/80 text-foreground">
-                                <Link href="/problems">
+                                <Link href="/explore">
                                     Browse PRs
                                 </Link>
                             </Button>
@@ -255,7 +255,7 @@ export default function LandingPage() {
                                 Join our community of developers sharpening their engineering eyes. Every review is a lesson in better architecture.
                             </p>
                             <Button asChild size="lg" className="h-16 px-12 rounded-2xl text-xl font-bold bg-primary hover:bg-primary/90 ">
-                                <Link href="/problems">
+                                <Link href="/explore">
                                     Start Learning Now
                                 </Link>
                             </Button>

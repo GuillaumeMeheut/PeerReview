@@ -7,7 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Static routes with stable lastModified dates
     const routes: MetadataRoute.Sitemap = [
         { url: baseUrl, lastModified: "2026-03-08" },
-        { url: `${baseUrl}/problems`, lastModified: "2026-03-08" },
+        { url: `${baseUrl}/explore`, lastModified: "2026-03-08" },
         { url: `${baseUrl}/premium`, lastModified: "2026-03-08" },
         { url: `${baseUrl}/privacy`, lastModified: "2026-03-08" },
         { url: `${baseUrl}/terms`, lastModified: "2026-03-08" },

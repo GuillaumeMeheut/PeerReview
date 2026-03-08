@@ -29,11 +29,11 @@ export function MobileNav({ user, subscription }: MobileNavProps) {
                 <div className="absolute left-0 right-0 top-16 z-50 border-b border-border/50 bg-background shadow-lg animate-in slide-in-from-top-2 duration-200">
                     <div className="flex flex-col gap-1 px-6 py-4">
                         <Link
-                            href="/problems"
+                            href="/explore"
                             onClick={() => setOpen(false)}
                             className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                         >
-                            Problems
+                            Explore
                         </Link>
                         {!user && (
                             <>

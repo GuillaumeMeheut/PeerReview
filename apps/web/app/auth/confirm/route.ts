@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       // redirect user to specified redirect URL or root of app
       return NextResponse.redirect(
-        `${requestUrl.origin}/problems`,
+        `${requestUrl.origin}/explore`,
       );
     }
   }

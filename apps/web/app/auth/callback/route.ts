@@ -51,5 +51,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${requestUrl.origin}${next}`);
   }
 
-  return NextResponse.redirect(`${requestUrl.origin}/problems`);
+  return NextResponse.redirect(`${requestUrl.origin}/explore`);
 }

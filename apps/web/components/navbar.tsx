@@ -20,8 +20,8 @@ export async function Navbar() {
                 {/* Desktop navigation */}
                 <div className="hidden md:flex items-center gap-6">
                     <div className="flex gap-6 text-sm font-medium text-muted-foreground">
-                        <Link href="/problems" className="hover:text-foreground transition-colors">
-                            Problems
+                        <Link href="/explore" className="hover:text-foreground transition-colors">
+                            Explore
                         </Link>
                     </div>
                     {user ? (

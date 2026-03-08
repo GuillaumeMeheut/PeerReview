@@ -186,7 +186,7 @@ export function PremiumPageContent() {
                             className="w-full rounded-xl"
                             asChild
                         >
-                            <Link href="/problems">Continue Free</Link>
+                            <Link href="/explore">Continue Free</Link>
                         </Button>
                     </motion.div>
 

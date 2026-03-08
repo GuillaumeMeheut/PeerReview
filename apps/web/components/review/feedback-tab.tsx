@@ -111,7 +111,7 @@ export function FeedbackTab({ feedback, pr }: FeedbackTabProps) {
             <Separator className="bg-border/30" />
             <div className="flex justify-center pb-4">
                 <Link
-                    href="/problems"
+                    href="/explore"
                     className="flex items-center gap-2 px-6 py-3 bg-foreground text-background text-sm font-medium rounded-md hover:bg-foreground/90 transition-colors"
                 >
                     Review another PR
