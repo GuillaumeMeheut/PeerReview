@@ -1,6 +1,3 @@
-"use client";
-
-import Link from "next/link";
 import { Badge } from "@workspace/ui/components/badge";
 import {
     Card,
@@ -11,7 +8,7 @@ import {
 } from "@workspace/ui/components/card";
 import { ArrowRight, GitPullRequest } from "lucide-react";
 import type { PullRequest } from "@/lib/types";
-import posthog from "posthog-js";
+import { PRCardLink } from "./pr-card-link";
 
 const difficultyColors: Record<string, string> = {
     Junior:
@@ -43,21 +40,8 @@ export function PRCard({ pr }: { pr: PullRequest }) {
     const totalAdditions = pr.exercise_files.reduce((sum, f) => sum + f.additions, 0);
     const totalDeletions = pr.exercise_files.reduce((sum, f) => sum + f.deletions, 0);
 
-    const handleReviewStart = () => {
-        posthog.capture("review_started", {
-            pr_id: pr.id,
-            pr_title: pr.title,
-            difficulty: pr.difficulty,
-            tech_stack: pr.tech_stack,
-            tags: pr.tags,
-            file_count: pr.exercise_files.length,
-            total_additions: totalAdditions,
-            total_deletions: totalDeletions,
-        });
-    };
-
     return (
-        <Link href={`/review/${pr.id}`} className="block group h-full" onClick={handleReviewStart}>
+        <PRCardLink pr={pr} totalAdditions={totalAdditions} totalDeletions={totalDeletions}>
             <Card className={`h-full flex flex-col border-border/50 bg-gradient-to-b from-card/50 to-card/10 backdrop-blur-sm transition-all duration-300 ${cardHoverStyles[pr.difficulty] || 'hover:border-primary/40'} hover:bg-card/80 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden`}>
                 {/* Top Difficulty Accent */}
                 <div className={`absolute top-0 left-0 right-0 h-[3px] transition-all duration-300 ${topAccentColors[pr.difficulty] || 'bg-primary/50 group-hover:bg-primary'}`} />
@@ -120,6 +104,6 @@ export function PRCard({ pr }: { pr: PullRequest }) {
                     </div>
                 </CardFooter>
             </Card>
-        </Link>
+        </PRCardLink>
     );
 }

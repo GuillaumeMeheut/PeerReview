@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { PRCard } from "@/components/pr-card";
 import { FilterBar } from "@/components/filter-bar";
 import { PullRequest, Difficulty } from "@/lib/types";
-import { X, Sparkles } from "lucide-react";
+import { X } from "lucide-react";
 import posthog from "posthog-js";
 
 interface HomeContentProps {
@@ -67,30 +67,7 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
     };
 
     return (
-        <main className="min-h-screen relative overflow-hidden">
-            {/* Background ambient accents */}
-            <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80 pointer-events-none">
-                <div
-                    className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-primary/30 to-secondary/30 opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
-                    style={{
-                        clipPath:
-                            "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
-                    }}
-                />
-            </div>
-
-            <div className="max-w-7xl mx-auto px-6 pt-16 pb-24 md:pt-24 md:pb-32">
-                {/* Hero Section */}
-                <div className="relative z-10 mx-auto max-w-4xl text-center mb-16 space-y-6">
-                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-7xl bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70 animate-in fade-in slide-in-from-bottom-5 duration-700">
-                        Explore <span className="text-primary">Pull Requests</span>
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-1000">
-                        Level up your code review skills by exploring and reviewing real-world code changes. Select your preferred tech stack and dive in.
-                    </p>
-                </div>
-
-                <div className="relative z-10 max-w-6xl mx-auto">
+        <div className="relative z-10 max-w-6xl mx-auto">
                     <FilterBar
                         techStackOptions={techStackOptions}
                         selectedTechStack={selectedTechStack}
@@ -136,8 +113,6 @@ export function HomeContent({ pullRequests }: HomeContentProps) {
                             </button>
                         </div>
                     )}
-                </div>
-            </div>
-        </main>
+        </div>
     );
 }
