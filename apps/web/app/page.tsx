@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+    alternates: { canonical: "https://peer-review.dev" },
+};
 import Image from "next/image";
 import { ArrowRight, Code, MessageSquarePlus, Zap, CheckCircle2 } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";

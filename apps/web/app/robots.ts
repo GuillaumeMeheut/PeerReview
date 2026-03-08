@@ -4,10 +4,12 @@ export default function robots(): MetadataRoute.Robots {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://peer-review.dev";
 
     return {
-        rules: {
-            userAgent: "*",
-            allow: "/",
-        },
+        rules: [
+            { userAgent: "*", allow: "/" },
+            { userAgent: "Google-Extended", allow: "/" },
+            { userAgent: "GPTBot", allow: "/" },
+            { userAgent: "PerplexityBot", allow: "/" },
+        ],
         sitemap: `${baseUrl}/sitemap.xml`,
     };
 }

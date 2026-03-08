@@ -19,12 +19,15 @@ export const metadata: Metadata = {
         siteName: "PeerReview",
         locale: "en_US",
         type: "website",
+        images: [{ url: "/pr-list.png", width: 1200, height: 630, alt: "PeerReview — Practice Code Reviews with AI Feedback" }],
     },
     twitter: {
         card: "summary_large_image",
         title: "PeerReview - Practice Code Reviews",
         description: "Practice code reviews and refactoring like in real teams.",
+        images: ["/pr-list.png"],
     },
+    alternates: { canonical: baseUrl },
 };
 
 export default function RootLayout({

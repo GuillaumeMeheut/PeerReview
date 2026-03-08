@@ -7,6 +7,7 @@ import { Suspense } from "react";
 export const metadata: Metadata = {
     title: "Sign Up - PeerReview",
     description: "Create your PeerReview account",
+    robots: { index: false, follow: false },
 };
 
 export default function SignUpPage() {
