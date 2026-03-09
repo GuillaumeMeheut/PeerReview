@@ -22,10 +22,18 @@ export const metadata: Metadata = {
     alternates: { canonical: `${baseUrl}/premium` },
 };
 
-export default function PremiumPage() {
+export default async function PremiumPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+    const params = await searchParams;
+    const success = params.success === "true";
+    const canceled = params.canceled === "true";
+
     return (
         <Suspense>
-            <PremiumPageContent />
+            <PremiumPageContent success={success} canceled={canceled} />
         </Suspense>
     );
 }

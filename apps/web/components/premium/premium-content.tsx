@@ -1,29 +1,7 @@
-"use client";
-
-import { motion, Variants } from "framer-motion";
 import { Check, Sparkles, Zap, Shield, Infinity, ArrowLeft } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
-import { useSearchParams } from "next/navigation";
-
-const fadeIn: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.5, ease: "easeOut" },
-    },
-};
-
-const staggerContainer: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.15 },
-    },
-};
+import { UpgradeButton } from "./upgrade-button";
 
 const freeTierFeatures = [
     "3 AI review credits per month",
@@ -40,33 +18,12 @@ const proTierFeatures = [
     "Priority support",
 ];
 
-export function PremiumPageContent() {
-    const [loading, setLoading] = useState(false);
-    const searchParams = useSearchParams();
-    const success = searchParams.get("success") === "true";
-    const canceled = searchParams.get("canceled") === "true";
+interface PremiumPageContentProps {
+    success?: boolean;
+    canceled?: boolean;
+}
 
-    const handleUpgrade = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/stripe/checkout", { method: "POST" });
-            const data: { error?: string; url?: string } = await res.json();
-
-            if (data.error) {
-                toast.error(data.error);
-                return;
-            }
-
-            if (data.url) {
-                window.location.href = data.url;
-            }
-        } catch {
-            toast.error("Something went wrong. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
+export function PremiumPageContent({ success, canceled }: PremiumPageContentProps) {
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col pt-8 selection:bg-primary/20">
             {/* Background */}
@@ -89,73 +46,43 @@ export function PremiumPageContent() {
 
                 {/* Success / Cancel banners */}
                 {success && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="w-full max-w-2xl mb-8 p-4 rounded-xl border border-green-500/30 bg-green-500/10 text-center"
-                    >
+                    <div className="w-full max-w-2xl mb-8 p-4 rounded-xl border border-green-500/30 bg-green-500/10 text-center">
                         <p className="text-green-400 font-semibold flex items-center justify-center gap-2">
                             <Sparkles className="h-5 w-5" />
                             Welcome to PeerReview Pro! Your subscription is now active.
                         </p>
-                    </motion.div>
+                    </div>
                 )}
 
                 {canceled && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="w-full max-w-2xl mb-8 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-center"
-                    >
+                    <div className="w-full max-w-2xl mb-8 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-center">
                         <p className="text-yellow-400 font-medium">
                             Payment was canceled. You can try again anytime.
                         </p>
-                    </motion.div>
+                    </div>
                 )}
 
                 {/* Header */}
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={staggerContainer}
-                    className="flex flex-col items-center text-center mb-16"
-                >
-                    <motion.div
-                        variants={fadeIn}
-                        className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-sm font-medium mb-6 text-indigo-400"
-                    >
+                <div className="flex flex-col items-center text-center mb-16">
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-sm font-medium mb-6 text-indigo-400">
                         <Sparkles className="h-3.5 w-3.5" />
                         Upgrade your experience
-                    </motion.div>
+                    </div>
 
-                    <motion.h1
-                        variants={fadeIn}
-                        className="text-4xl md:text-5xl font-bold tracking-tight mb-4"
-                    >
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
                         Choose your plan
-                    </motion.h1>
+                    </h1>
 
-                    <motion.p
-                        variants={fadeIn}
-                        className="text-lg text-muted-foreground max-w-xl"
-                    >
+                    <p className="text-lg text-muted-foreground max-w-xl">
                         Unlock unlimited AI-powered code review feedback and
                         accelerate your engineering growth.
-                    </motion.p>
-                </motion.div>
+                    </p>
+                </div>
 
                 {/* Pricing Cards */}
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={staggerContainer}
-                    className="grid md:grid-cols-2 gap-8 w-full max-w-3xl mb-24"
-                >
+                <div className="grid md:grid-cols-2 gap-8 w-full max-w-3xl mb-24">
                     {/* Free Tier */}
-                    <motion.div
-                        variants={fadeIn}
-                        className="relative rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-8 flex flex-col"
-                    >
+                    <div className="relative rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-8 flex flex-col">
                         <div className="mb-6">
                             <h3 className="text-xl font-semibold mb-1">Free</h3>
                             <p className="text-sm text-muted-foreground">
@@ -188,13 +115,10 @@ export function PremiumPageContent() {
                         >
                             <Link href="/explore">Continue Free</Link>
                         </Button>
-                    </motion.div>
+                    </div>
 
                     {/* Pro Tier */}
-                    <motion.div
-                        variants={fadeIn}
-                        className="relative rounded-2xl border-2 border-indigo-500/40 bg-card/80 backdrop-blur-sm p-8 flex flex-col overflow-hidden"
-                    >
+                    <div className="relative rounded-2xl border-2 border-indigo-500/40 bg-card/80 backdrop-blur-sm p-8 flex flex-col overflow-hidden">
                         {/* Glow effect */}
                         <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none" />
                         <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl" />
@@ -235,39 +159,13 @@ export function PremiumPageContent() {
                             ))}
                         </ul>
 
-                        <Button
-                            size="lg"
-                            className="relative w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white"
-                            onClick={handleUpgrade}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <span className="flex items-center gap-2">
-                                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Redirecting...
-                                </span>
-                            ) : (
-                                <span className="flex items-center gap-2">
-                                    <Zap className="h-4 w-4" />
-                                    Upgrade to Pro
-                                </span>
-                            )}
-                        </Button>
-                    </motion.div>
-                </motion.div>
+                        <UpgradeButton />
+                    </div>
+                </div>
 
                 {/* Trust Section */}
-                <motion.div
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true }}
-                    variants={staggerContainer}
-                    className="w-full max-w-3xl mb-24"
-                >
-                    <motion.div
-                        variants={fadeIn}
-                        className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-8 grid md:grid-cols-3 gap-8"
-                    >
+                <div className="w-full max-w-3xl mb-24">
+                    <div className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-8 grid md:grid-cols-3 gap-8">
                         <div className="flex flex-col items-center text-center gap-3">
                             <div className="p-3 rounded-xl bg-primary/10">
                                 <Infinity className="h-6 w-6 text-primary" />
@@ -295,8 +193,8 @@ export function PremiumPageContent() {
                                 Help us build more exercises, features, and keep PeerReview free for everyone.
                             </p>
                         </div>
-                    </motion.div>
-                </motion.div>
+                    </div>
+                </div>
             </main>
         </div>
     );
