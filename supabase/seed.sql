@@ -1054,3 +1054,417 @@ insert into public.exercise_expected_issues (id, exercise_id, title, description
  'The checkout session is created without an idempotency key. If the client retries due to a network timeout, this could create duplicate checkout sessions. Pass an `idempotencyKey` option based on the user ID and a timestamp or request ID.',
  'suggestion', null, 4)
 on conflict (id) do nothing;
+
+
+-- ---------------------------------------------------------------------------
+-- Exercise 8: Add dark mode toggle with localStorage persistence
+-- ---------------------------------------------------------------------------
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
+values (
+  'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+  'Add dark mode toggle with localStorage persistence',
+  'This PR adds a theme toggle button that switches between light and dark mode. It persists the user''s preference in localStorage and applies the theme on page load. The implementation uses React context to share the theme state across the app.',
+  'Junior',
+  array['React', 'TypeScript', 'CSS'],
+  array['ui', 'accessibility', 'state'],
+  'anna-l',
+  'main',
+  'feature/dark-mode-toggle',
+  array[
+    'Flash of wrong theme on page load (FOUC) — the useEffect runs after paint, so the user briefly sees the default theme before the saved preference is applied.',
+    'No detection of the OS-level `prefers-color-scheme` preference as a default.',
+    'Direct localStorage access in the initial useState causes a hydration mismatch in SSR frameworks.'
+  ]
+) on conflict (id) do nothing;
+
+-- Exercise 8 — Files
+insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
+  ('b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 'src/context/ThemeContext.tsx', 37, 0, 0),
+  ('c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 'src/components/ThemeToggle.tsx', 15, 0, 1),
+  ('d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 'src/app/layout.tsx', 8, 4, 2)
+on conflict (id) do nothing;
+
+-- Exercise 8, File 1 — ThemeContext.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e', '@@ -0,0 +1,37 @@',
+'[
+  {"type":"added","content":"\"use client\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { createContext, useContext, useState, useEffect, ReactNode } from \"react\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"type Theme = \"light\" | \"dark\";","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"interface ThemeContextType {","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  theme: Theme;","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"  toggleTheme: () => void;","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"const ThemeContext = createContext<ThemeContextType | undefined>(undefined);","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"export function ThemeProvider({ children }: { children: ReactNode }) {","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"  const [theme, setTheme] = useState<Theme>(localStorage.getItem(\"theme\") as Theme || \"light\");","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"    localStorage.setItem(\"theme\", theme);","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"    document.documentElement.classList.remove(\"light\", \"dark\");","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"    document.documentElement.classList.add(theme);","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"  }, [theme]);","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"  const toggleTheme = () => {","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"    setTheme(theme === \"light\" ? \"dark\" : \"light\");","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"    <ThemeContext.Provider value={{ theme, toggleTheme }}>","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"      {children}","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"    </ThemeContext.Provider>","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"export function useTheme() {","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"  const context = useContext(ThemeContext);","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"  if (!context) throw new Error(\"useTheme must be used within ThemeProvider\");","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"  return context;","oldLineNumber":null,"newLineNumber":36},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":37}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 8, File 2 — ThemeToggle.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f', '@@ -0,0 +1,15 @@',
+'[
+  {"type":"added","content":"\"use client\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { useTheme } from \"../context/ThemeContext\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"export function ThemeToggle() {","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  const { theme, toggleTheme } = useTheme();","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"    <button","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"      onClick={toggleTheme}","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"      className=\"p-2 rounded-lg bg-gray-200 dark:bg-gray-700\"","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"    >","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"      {theme === \"light\" ? \"Moon\" : \"Sun\"}","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"    </button>","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":15}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 8, File 3 — layout.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1d', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a', '@@ -1,10 +1,14 @@',
+'[
+  {"type":"unchanged","content":"import \"./globals.css\";","oldLineNumber":1,"newLineNumber":1},
+  {"type":"added","content":"import { ThemeProvider } from \"@/context/ThemeContext\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { ThemeToggle } from \"@/components/ThemeToggle\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"unchanged","content":"","oldLineNumber":2,"newLineNumber":4},
+  {"type":"unchanged","content":"export default function RootLayout({ children }: { children: React.ReactNode }) {","oldLineNumber":3,"newLineNumber":5},
+  {"type":"unchanged","content":"  return (","oldLineNumber":4,"newLineNumber":6},
+  {"type":"removed","content":"    <html lang=\"en\">","oldLineNumber":5,"newLineNumber":null},
+  {"type":"removed","content":"      <body>","oldLineNumber":6,"newLineNumber":null},
+  {"type":"removed","content":"        {children}","oldLineNumber":7,"newLineNumber":null},
+  {"type":"removed","content":"      </body>","oldLineNumber":8,"newLineNumber":null},
+  {"type":"added","content":"    <html lang=\"en\" suppressHydrationWarning>","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"      <body>","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"        <ThemeProvider>","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"          <header className=\"flex justify-end p-4\">","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"            <ThemeToggle />","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"          </header>","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"          {children}","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"        </ThemeProvider>","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"      </body>","oldLineNumber":null,"newLineNumber":15},
+  {"type":"unchanged","content":"    </html>","oldLineNumber":9,"newLineNumber":16},
+  {"type":"unchanged","content":"  );","oldLineNumber":10,"newLineNumber":17},
+  {"type":"unchanged","content":"}","oldLineNumber":11,"newLineNumber":18}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 8 — Expected Issues
+insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
+('b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d2e', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+ 'SSR hydration mismatch — localStorage in useState initializer',
+ 'Calling `localStorage.getItem("theme")` directly in the `useState` initializer will crash during server-side rendering because `localStorage` is not available on the server. This causes a hydration mismatch or a runtime error. Initialize with a default value and read localStorage in a `useEffect`.',
+ 'critical', '  const [theme, setTheme] = useState<Theme>(localStorage.getItem("theme") as Theme || "light");', 0),
+('c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+ 'Flash of wrong theme (FOUC)',
+ 'The theme class is applied in a `useEffect`, which runs after the first paint. Users will see a flash of the default "light" theme before the saved preference is applied. Consider using a blocking `<script>` tag in the `<head>` to apply the theme class before React hydrates.',
+ 'critical', '    document.documentElement.classList.add(theme);', 1),
+('d0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f4a', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+ 'No OS-level preference detection',
+ 'The implementation defaults to "light" and ignores the user''s OS-level `prefers-color-scheme` media query. Use `window.matchMedia("(prefers-color-scheme: dark)")` as the fallback when no localStorage value exists.',
+ 'suggestion', null, 2),
+('e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b', 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+ 'Missing `aria-label` on toggle button',
+ 'The toggle button only shows a text label with no accessible name. Screen readers will just announce the inner text. Add `aria-label="Toggle dark mode"` for accessibility.',
+ 'nitpick', '      onClick={toggleTheme}', 3)
+on conflict (id) do nothing;
+
+
+-- ---------------------------------------------------------------------------
+-- Exercise 9: Implement REST API pagination with Prisma
+-- ---------------------------------------------------------------------------
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
+values (
+  'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60',
+  'Add paginated REST API endpoint with sorting',
+  'This PR adds a paginated API endpoint for listing blog posts. It supports cursor-based pagination and dynamic sorting via query parameters, using Prisma as the ORM.',
+  'Mid',
+  array['TypeScript', 'Node.js', 'Prisma'],
+  array['api', 'security', 'database'],
+  'thomas-r',
+  'main',
+  'feature/paginated-posts-api',
+  array[
+    'SQL injection via unsanitized `sortBy` field — the query parameter is passed directly to Prisma''s `orderBy` without validation.',
+    'The `take` parameter is not capped, allowing clients to request enormous page sizes and overload the database.',
+    'Returning the total count on every request triggers an expensive `COUNT(*)` query that does not scale.'
+  ]
+) on conflict (id) do nothing;
+
+-- Exercise 9 — Files
+insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
+  ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9c', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60', 'src/app/api/posts/route.ts', 35, 0, 0),
+  ('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0d', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60', 'src/lib/posts.ts', 28, 0, 1)
+on conflict (id) do nothing;
+
+-- Exercise 9, File 1 — route.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1e', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9c', '@@ -0,0 +1,35 @@',
+'[
+  {"type":"added","content":"import { NextRequest, NextResponse } from \"next/server\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { getPosts } from \"@/lib/posts\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"export async function GET(req: NextRequest) {","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  const { searchParams } = new URL(req.url);","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  const cursor = searchParams.get(\"cursor\") || undefined;","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"  const take = parseInt(searchParams.get(\"take\") || \"20\");","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"  const sortBy = searchParams.get(\"sortBy\") || \"createdAt\";","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"  const order = searchParams.get(\"order\") || \"desc\";","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"  try {","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"    const { posts, total, nextCursor } = await getPosts({","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"      cursor,","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"      take,","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"      sortBy,","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"      order: order as \"asc\" | \"desc\",","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"    });","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"    return NextResponse.json({","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"      data: posts,","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"      meta: {","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"        total,","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"        nextCursor,","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"        hasMore: !!nextCursor,","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"      },","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"    });","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"  } catch (error) {","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"    console.error(\"Failed to fetch posts:\", error);","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"    return NextResponse.json(","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"      { error: \"Internal server error\" },","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"      { status: 500 }","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"    );","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":35}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 9, File 2 — posts.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d2f', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0d', '@@ -0,0 +1,28 @@',
+'[
+  {"type":"added","content":"import { prisma } from \"./prisma\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"interface GetPostsParams {","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"  cursor?: string;","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  take: number;","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  sortBy: string;","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  order: \"asc\" | \"desc\";","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"export async function getPosts({ cursor, take, sortBy, order }: GetPostsParams) {","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"  const [posts, total] = await Promise.all([","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"    prisma.post.findMany({","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"      take: take + 1,","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"      orderBy: { [sortBy]: order },","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"      include: {","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"        author: { select: { name: true, avatar: true } },","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"        _count: { select: { comments: true } },","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"      },","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"    }),","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"    prisma.post.count(),","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"  ]);","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"  const hasMore = posts.length > take;","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"  const nextCursor = hasMore ? posts[take].id : null;","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"  return { posts: posts.slice(0, take), total, nextCursor };","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":28}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 9 — Expected Issues
+insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
+('c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3a', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60',
+ 'Unsanitized `sortBy` enables arbitrary field access',
+ 'The `sortBy` query parameter is passed directly into Prisma''s `orderBy: { [sortBy]: order }` without validation. An attacker could pass `sortBy=password` or other sensitive fields to probe the schema, or cause errors with invalid field names. Validate `sortBy` against an allowlist of sortable columns.',
+ 'critical', '      orderBy: { [sortBy]: order },', 0),
+('d0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f4b', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60',
+ 'No maximum limit on `take` parameter',
+ 'The `take` parameter is parsed from user input without an upper bound. A client could request `?take=1000000` and force the database to return an enormous result set, causing memory exhaustion and slow responses. Cap it (e.g., `Math.min(take, 100)`).',
+ 'critical', '  const take = parseInt(searchParams.get("take") || "20");', 1),
+('e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5c', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60',
+ 'Expensive `COUNT(*)` on every request',
+ 'Running `prisma.post.count()` in parallel with every paginated query triggers a full table scan. For cursor-based pagination, total count is usually unnecessary — consider removing it or caching it, and only returning `hasMore`.',
+ 'suggestion', '    prisma.post.count(),', 2),
+('f2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b6c', 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d60',
+ 'Unsafe `order` cast without validation',
+ 'The `order` parameter is cast as `"asc" | "desc"` without checking the actual value. A user could pass `?order=DROP TABLE` — while Prisma would reject it, proper input validation should happen at the API boundary, not rely on ORM error handling.',
+ 'nitpick', '      order: order as "asc" | "desc",', 3)
+on conflict (id) do nothing;
+
+
+-- ---------------------------------------------------------------------------
+-- Exercise 10: Add WebSocket notifications with reconnection
+-- ---------------------------------------------------------------------------
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
+values (
+  'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70',
+  'Add real-time notifications via WebSocket with auto-reconnect',
+  'This PR adds a WebSocket hook for real-time notifications. It includes automatic reconnection logic when the connection drops and a notification toast component that displays incoming messages. The hook manages the WebSocket lifecycle and exposes connection status to the UI.',
+  'Senior',
+  array['React', 'TypeScript', 'WebSocket'],
+  array['real-time', 'hooks', 'error-handling'],
+  'kevin-m',
+  'main',
+  'feature/websocket-notifications',
+  array[
+    'Memory leak: the WebSocket `onmessage` handler closes over stale state because it is never re-assigned when `onMessage` changes.',
+    'Reconnection with no exponential backoff — fixed 1-second delay can overwhelm the server during outages.',
+    'No cleanup of the reconnect timeout on unmount, which can cause state updates on unmounted components.'
+  ]
+) on conflict (id) do nothing;
+
+-- Exercise 10 — Files
+insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
+  ('a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1f', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70', 'src/hooks/useWebSocket.ts', 43, 0, 0),
+  ('b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d2a', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70', 'src/components/NotificationToast.tsx', 36, 0, 1)
+on conflict (id) do nothing;
+
+-- Exercise 10, File 1 — useWebSocket.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3b', 'a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1f', '@@ -0,0 +1,43 @@',
+'[
+  {"type":"added","content":"import { useState, useEffect, useRef } from \"react\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"type ConnectionStatus = \"connecting\" | \"connected\" | \"disconnected\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"export function useWebSocket(url: string, onMessage: (data: any) => void) {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  const [status, setStatus] = useState<ConnectionStatus>(\"disconnected\");","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  const wsRef = useRef<WebSocket | null>(null);","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"    function connect() {","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"      setStatus(\"connecting\");","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"      const ws = new WebSocket(url);","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"      wsRef.current = ws;","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"      ws.onopen = () => {","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"        setStatus(\"connected\");","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"      };","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"      ws.onmessage = (event) => {","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"        const data = JSON.parse(event.data);","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"        onMessage(data);","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"      };","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"      ws.onerror = () => {","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"        console.error(\"WebSocket error\");","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"      };","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"      ws.onclose = () => {","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"        setStatus(\"disconnected\");","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"        // Auto-reconnect after 1 second","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"        setTimeout(connect, 1000);","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"      };","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"    connect();","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":36},
+  {"type":"added","content":"    return () => {","oldLineNumber":null,"newLineNumber":37},
+  {"type":"added","content":"      wsRef.current?.close();","oldLineNumber":null,"newLineNumber":38},
+  {"type":"added","content":"    };","oldLineNumber":null,"newLineNumber":39},
+  {"type":"added","content":"  }, [url]);","oldLineNumber":null,"newLineNumber":40},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":41},
+  {"type":"added","content":"  return { status };","oldLineNumber":null,"newLineNumber":42},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":43}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 10, File 2 — NotificationToast.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('d0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f4c', 'b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d2a', '@@ -0,0 +1,36 @@',
+'[
+  {"type":"added","content":"\"use client\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { useState } from \"react\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { useWebSocket } from \"../hooks/useWebSocket\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"interface Notification {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  id: string;","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  message: string;","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"  type: \"info\" | \"success\" | \"error\";","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"export function NotificationToast() {","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"  const [notifications, setNotifications] = useState<Notification[]>([]);","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"  const { status } = useWebSocket(","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"    process.env.NEXT_PUBLIC_WS_URL!,","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"    (data: Notification) => {","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"      setNotifications((prev) => [...prev, data]);","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"      setTimeout(() => {","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"        setNotifications((prev) => prev.filter((n) => n.id !== data.id));","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"      }, 5000);","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"  return (","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"    <div className=\"fixed top-4 right-4 flex flex-col gap-2 z-50\">","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"      {status === \"disconnected\" && (","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"        <div className=\"bg-yellow-100 text-yellow-800 px-4 py-2 rounded\">Reconnecting...</div>","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"      )}","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"      {notifications.map((n) => (","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"        <div key={n.id} className={`px-4 py-3 rounded shadow-lg text-white ${ n.type === \"error\" ? \"bg-red-500\" : n.type === \"success\" ? \"bg-green-500\" : \"bg-blue-500\" }`}>","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"          {n.message}","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"        </div>","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"      ))}","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"    </div>","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":36}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 10 — Expected Issues
+insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
+('e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5d', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70',
+ 'Stale closure over `onMessage` callback',
+ 'The `onMessage` callback is captured in the `ws.onmessage` handler during the initial `connect()` call, but it is not in the `useEffect` dependency array. If `onMessage` changes (e.g., because the parent re-renders with a new inline function), the WebSocket will keep calling the old version. Use a ref to always call the latest callback.',
+ 'critical', '        onMessage(data);', 0),
+('f2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b6d', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70',
+ 'Reconnect timeout not cleaned up on unmount',
+ 'The `setTimeout(connect, 1000)` inside `ws.onclose` is not tracked or cleared in the cleanup function. If the component unmounts while the timeout is pending, `connect()` will still fire, creating a new WebSocket and calling `setStatus` on an unmounted component.',
+ 'critical', '        setTimeout(connect, 1000);', 1),
+('a3b4c5d6-e7f8-4a9b-0c1d-2e3f4a5b6c7d', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70',
+ 'No exponential backoff on reconnection',
+ 'The reconnection uses a fixed 1-second delay. During a server outage, every connected client will hammer the server with reconnection attempts every second. Use exponential backoff (e.g., 1s, 2s, 4s, 8s... capped at 30s) to reduce thundering herd effects.',
+ 'critical', '        setTimeout(connect, 1000);', 2),
+('b4c5d6e7-f8a9-4b0c-1d2e-3f4a5b6c7d8e', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70',
+ 'No error handling for JSON.parse',
+ 'If the server sends a non-JSON message, `JSON.parse(event.data)` will throw and crash the handler silently. Wrap it in a try/catch to handle malformed messages gracefully.',
+ 'suggestion', '        const data = JSON.parse(event.data);', 3),
+('c5d6e7f8-a9b0-4c1d-2e3f-4a5b6c7d8e9f', 'c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e70',
+ 'Non-null assertion on WebSocket URL',
+ 'Using `process.env.NEXT_PUBLIC_WS_URL!` will crash at runtime if the environment variable is not set. Add a runtime check or a fallback to provide a clear error message during development.',
+ 'nitpick', '    process.env.NEXT_PUBLIC_WS_URL!,', 4)
+on conflict (id) do nothing;
