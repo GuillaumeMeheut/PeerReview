@@ -3,7 +3,7 @@ import Image from "next/image";
 import { getUser, getUserSubscriptionById } from "@/lib/supabase/queries";
 import { UserNav } from "@/components/auth/user-nav";
 import { Button } from "@workspace/ui/components/button";
-import { MobileNav } from "@/components/mobile-nav";
+import { MobileNav } from "@/components/layout/mobile-nav";
 
 export async function Navbar() {
     const { user } = await getUser();

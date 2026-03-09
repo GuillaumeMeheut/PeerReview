@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { PRCard } from "@/components/pr-card";
-import { FilterBar } from "@/components/filter-bar";
+import { PRCard } from "@/components/explore/pr-card";
+import { FilterBar } from "@/components/explore/filter-bar";
 import { PullRequest, Difficulty } from "@/lib/types";
 import { X } from "lucide-react";
 import posthog from "posthog-js";

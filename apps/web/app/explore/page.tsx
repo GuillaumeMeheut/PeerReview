@@ -1,5 +1,5 @@
 import { getExercises } from "@/lib/supabase/queries"
-import { HomeContent } from "@/components/home-content"
+import { HomeContent } from "@/components/explore/home-content"
 import { Metadata } from "next";
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://peer-review.dev";
