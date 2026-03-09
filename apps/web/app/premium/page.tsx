@@ -11,13 +11,13 @@ export const metadata: Metadata = {
         title: "PeerReview Premium — Unlimited AI Feedback",
         description: "Upgrade to PeerReview Pro for unlimited AI-powered code review feedback and priority support.",
         url: `${baseUrl}/premium`,
-        images: [{ url: "/pr-list.png", width: 1200, height: 630 }],
+        images: [{ url: "/og-image.png", width: 1200, height: 630 }],
     },
     twitter: {
         card: "summary_large_image",
         title: "PeerReview Premium — Unlimited AI Feedback",
         description: "Upgrade to PeerReview Pro for unlimited AI-powered code review feedback and priority support.",
-        images: ["/pr-list.png"],
+        images: ["/og-image.png"],
     },
     alternates: { canonical: `${baseUrl}/premium` },
 };

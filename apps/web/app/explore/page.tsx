@@ -11,13 +11,13 @@ export const metadata: Metadata = {
         title: "Browse Pull Request Exercises | PeerReview",
         description: "Browse realistic pull requests to practice your code review skills. Filter by stack and difficulty.",
         url: `${baseUrl}/problems`,
-        images: [{ url: "/pr-list.png", width: 1200, height: 630 }],
+        images: [{ url: "/og-image.png", width: 1200, height: 630 }],
     },
     twitter: {
         card: "summary_large_image",
         title: "Browse Pull Request Exercises | PeerReview",
         description: "Browse realistic pull requests to practice your code review skills.",
-        images: ["/pr-list.png"],
+        images: ["/og-image.png"],
     },
     alternates: { canonical: `${baseUrl}/problems` },
 };
