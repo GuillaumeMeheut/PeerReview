@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft, GitPullRequest, MessageSquare, Sparkles, Lightbulb, Lock } from "lucide-react";
+import { OnbordaProvider, Onborda } from "onborda";
 import { PRContext } from "@/components/review/pr-context";
+import { TourCard } from "@/components/review/tour-card";
+import { TourTrigger } from "@/components/review/tour-trigger";
+import { reviewTourSteps } from "@/components/review/tour-steps";
 import { PullRequest } from "@/lib/types";
 import { cn } from "@workspace/ui/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@workspace/ui/components/tooltip";
@@ -28,7 +32,16 @@ export function ReviewLayout({
     };
 
     return (
+        <OnbordaProvider>
+        <Onborda
+            steps={reviewTourSteps}
+            shadowRgb="0,0,0"
+            shadowOpacity="0.7"
+            cardComponent={TourCard}
+            cardTransition={{ duration: 0.3, type: "tween" }}
+        >
         <TooltipProvider>
+            <TourTrigger />
             <div className="min-h-screen">
                 {/* Header */}
                 <header className="border-b border-border/50 sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
@@ -70,6 +83,7 @@ export function ReviewLayout({
                             label="My Review"
                         />
                         <TabLink
+                            id="tour-feedback-tab"
                             href={latestReviewId ? `${baseUrl}/feedback/${latestReviewId}` : ""}
                             isActive={isActive(`${baseUrl}/feedback`)}
                             icon={latestReviewId ? <Sparkles className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
@@ -78,6 +92,7 @@ export function ReviewLayout({
                             tooltipMessage="Submit a review first to unlock AI feedback"
                         />
                         <TabLink
+                            id="tour-discussions-tab"
                             href={`${baseUrl}/discussions`}
                             isActive={isActive(`${baseUrl}/discussions`)}
                             icon={<MessageSquare className="h-3 w-3" />}
@@ -85,6 +100,7 @@ export function ReviewLayout({
                         />
 
                         <TabLink
+                            id="tour-solutions-tab"
                             href={`${baseUrl}/solutions`}
                             isActive={isActive(`${baseUrl}/solutions`)}
                             icon={<Lightbulb className="h-3 w-3" />}
@@ -95,10 +111,13 @@ export function ReviewLayout({
                 </div>
             </div>
         </TooltipProvider>
+        </Onborda>
+        </OnbordaProvider>
     );
 }
 
 function TabLink({
+    id,
     href,
     isActive,
     icon,
@@ -106,6 +125,7 @@ function TabLink({
     isDisabled,
     tooltipMessage,
 }: {
+    id?: string;
     href: string;
     isActive: boolean;
     icon: React.ReactNode;
@@ -115,6 +135,7 @@ function TabLink({
 }) {
     const content = (
         <div
+            id={id}
             className={cn(
                 "flex-1 flex items-center justify-center gap-2 pb-3 text-sm font-medium transition-colors border-b-2 pt-2",
                 isActive

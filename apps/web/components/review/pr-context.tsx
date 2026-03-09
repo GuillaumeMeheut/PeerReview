@@ -10,7 +10,7 @@ export function PRContext({ pr }: { pr: PullRequest }) {
     const totalDeletions = pr.exercise_files.reduce((sum, f) => sum + f.deletions, 0);
 
     return (
-        <div className="border border-border/50 rounded-lg bg-card/30">
+        <div id="tour-context" className="border border-border/50 rounded-lg bg-card/30">
             <div className="p-5">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 min-w-0">
