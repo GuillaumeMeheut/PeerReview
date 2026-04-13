@@ -1468,3 +1468,496 @@ insert into public.exercise_expected_issues (id, exercise_id, title, description
  'Using `process.env.NEXT_PUBLIC_WS_URL!` will crash at runtime if the environment variable is not set. Add a runtime check or a fallback to provide a clear error message during development.',
  'nitpick', '    process.env.NEXT_PUBLIC_WS_URL!,', 4)
 on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Exercise 11: Add JWT authentication middleware with RBAC
+-- ---------------------------------------------------------------------------
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
+values (
+  'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
+  'Add JWT authentication middleware with role-based access',
+  'This PR introduces JWT-based authentication middleware and a role-based access control (RBAC) layer for an Express API. It includes token extraction, verification, user attachment to the request object, and route-level permission guards for admin endpoints.',
+  'Senior',
+  array['TypeScript', 'Node.js', 'Express'],
+  array['security', 'api', 'architecture', 'error-handling'],
+  'marcus-h',
+  'main',
+  'feature/jwt-auth-middleware',
+  array[
+    'JWT_SECRET falls back to a hardcoded string when the env var is missing — effectively no security in misconfigured deployments.',
+    'jwt.verify is called without specifying the algorithms option, allowing algorithm confusion attacks (e.g., alg: none).',
+    'Token is accepted from the query string, exposing it in server logs, browser history, and Referer headers.'
+  ]
+) on conflict (id) do nothing;
+
+-- Exercise 11 — Files
+insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
+  ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80', 'src/middleware/authenticate.ts', 48, 0, 0),
+  ('f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b01', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80', 'src/middleware/authorize.ts', 22, 0, 1),
+  ('a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c12', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80', 'src/routes/admin.ts', 34, 0, 2)
+on conflict (id) do nothing;
+
+-- Exercise 11, File 1 — authenticate.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d23', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90', '@@ -0,0 +1,48 @@',
+'[
+  {"type":"added","content":"import { Request, Response, NextFunction } from \"express\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import jwt from \"jsonwebtoken\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"export interface AuthenticatedRequest extends Request {","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  user?: {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"    id: string;","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"    email: string;","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"    role: string;","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"const JWT_SECRET = process.env.JWT_SECRET || \"secret\";","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"function extractToken(req: Request): string | null {","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"  // Check Authorization header first","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"  const authHeader = req.headers.authorization;","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"  if (authHeader?.startsWith(\"Bearer \")) {","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"    return authHeader.substring(7);","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"  // Fall back to query parameter for WebSocket compatibility","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"  if (typeof req.query.token === \"string\") {","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"    return req.query.token;","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"  return null;","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"export function authenticate(","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"  req: AuthenticatedRequest,","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"  res: Response,","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"  next: NextFunction","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":") {","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"  const token = extractToken(req);","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"  if (!token) {","oldLineNumber":null,"newLineNumber":36},
+  {"type":"added","content":"    return res.status(401).json({ error: \"Authentication required\" });","oldLineNumber":null,"newLineNumber":37},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":38},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":39},
+  {"type":"added","content":"  try {","oldLineNumber":null,"newLineNumber":40},
+  {"type":"added","content":"    const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;","oldLineNumber":null,"newLineNumber":41},
+  {"type":"added","content":"    req.user = {","oldLineNumber":null,"newLineNumber":42},
+  {"type":"added","content":"      id: decoded.sub as string,","oldLineNumber":null,"newLineNumber":43},
+  {"type":"added","content":"      email: decoded.email as string,","oldLineNumber":null,"newLineNumber":44},
+  {"type":"added","content":"      role: decoded.role as string,","oldLineNumber":null,"newLineNumber":45},
+  {"type":"added","content":"    };","oldLineNumber":null,"newLineNumber":46},
+  {"type":"added","content":"    next();","oldLineNumber":null,"newLineNumber":47},
+  {"type":"added","content":"  } catch {","oldLineNumber":null,"newLineNumber":48}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 11, File 1 — authenticate.ts chunk 2 (error handling)
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e34', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90', '@@ -49,0 +49,0 @@',
+'[
+  {"type":"added","content":"    return res.status(403).json({ message: \"Invalid or expired token\" });","oldLineNumber":null,"newLineNumber":49},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":50},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":51}
+]'::jsonb, 1)
+on conflict (id) do nothing;
+
+-- Exercise 11, File 2 — authorize.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('d0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f45', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b01', '@@ -0,0 +1,22 @@',
+'[
+  {"type":"added","content":"import { Response, NextFunction } from \"express\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { AuthenticatedRequest } from \"./authenticate\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"export function authorize(...allowedRoles: string[]) {","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"    if (!req.user) {","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"      return res.status(401).json({ error: \"Not authenticated\" });","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"    if (!allowedRoles.includes(req.user.role)) {","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"      return res.status(403).json({ message: \"Insufficient permissions\" });","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"    next();","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"  };","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"export function authorizeOwnerOrAdmin(","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"  req: AuthenticatedRequest,","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"  res: Response,","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"  next: NextFunction","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":") {","oldLineNumber":null,"newLineNumber":22}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 11, File 2 — authorize.ts chunk 2
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a56', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b01', '@@ -23,0 +23,0 @@',
+'[
+  {"type":"added","content":"  const userId = req.params.userId;","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"  if (req.user?.id === userId || req.user?.role === \"admin\") {","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"    return next();","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"  return res.status(403).json({ error: \"Access denied\" });","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":28}
+]'::jsonb, 1)
+on conflict (id) do nothing;
+
+-- Exercise 11, File 3 — admin.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('f2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b67', 'a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c12', '@@ -0,0 +1,34 @@',
+'[
+  {"type":"added","content":"import { Router } from \"express\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { authenticate, AuthenticatedRequest } from \"../middleware/authenticate\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import { authorize, authorizeOwnerOrAdmin } from \"../middleware/authorize\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"import { db } from \"../lib/database\";","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"const router = Router();","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"// All routes require authentication","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"router.use(authenticate);","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"// GET /admin/users — list all users (admin only)","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"router.get(\"/users\", authorize(\"Admin\"), async (req: AuthenticatedRequest, res) => {","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"  const users = await db.query(\"SELECT id, email, role FROM users\");","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"  res.json({ data: users.rows });","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"// DELETE /admin/users/:userId — delete a user (admin only)","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"router.delete(\"/users/:userId\", authorize(\"Admin\"), async (req: AuthenticatedRequest, res) => {","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"  const { userId } = req.params;","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"  await db.query(\"DELETE FROM users WHERE id = $1\", [userId]);","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"  res.json({ message: \"User deleted\" });","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"// PATCH /admin/users/:userId/role — update user role (admin only)","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"router.patch(\"/users/:userId/role\", authorize(\"Admin\"), async (req: AuthenticatedRequest, res) => {","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"  const { userId } = req.params;","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"  const { role } = req.body;","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"  await db.query(\"UPDATE users SET role = ''\" + role + \"'' WHERE id = $1\", [userId]);","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"  res.json({ message: \"Role updated\" });","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"// GET /admin/users/:userId — view a single user (owner or admin)","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"router.get(\"/users/:userId\", authorizeOwnerOrAdmin, async (req: AuthenticatedRequest, res) => {","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"  const { userId } = req.params;","oldLineNumber":null,"newLineNumber":34}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 11, File 3 — admin.ts chunk 2
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('a3b4c5d6-e7f8-4a9b-0c1d-2e3f4a5b6c78', 'a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c12', '@@ -35,0 +35,0 @@',
+'[
+  {"type":"added","content":"  const user = await db.query(\"SELECT id, email, role FROM users WHERE id = $1\", [userId]);","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"  if (user.rows.length === 0) {","oldLineNumber":null,"newLineNumber":36},
+  {"type":"added","content":"    return res.status(404).json({ error: \"User not found\" });","oldLineNumber":null,"newLineNumber":37},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":38},
+  {"type":"added","content":"  res.json({ data: user.rows[0] });","oldLineNumber":null,"newLineNumber":39},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":40},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":41},
+  {"type":"added","content":"export default router;","oldLineNumber":null,"newLineNumber":42}
+]'::jsonb, 1)
+on conflict (id) do nothing;
+
+-- Exercise 11 — Expected Issues
+insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
+('d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f90', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
+ 'JWT secret falls back to hardcoded string',
+ 'The line `const JWT_SECRET = process.env.JWT_SECRET || "secret"` silently falls back to a hardcoded value if the environment variable is not set. In a misconfigured production deployment, every token would be signed and verified with the string "secret", making it trivial for an attacker to forge tokens. Instead, throw an error at startup if JWT_SECRET is not defined.',
+ 'critical', '  const JWT_SECRET = process.env.JWT_SECRET || "secret";', 0),
+('e6f7a8b9-c0d1-4e2f-3a4b-5c6d7e8f9a01', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
+ 'No algorithm specified in jwt.verify — algorithm confusion attack',
+ 'Calling `jwt.verify(token, JWT_SECRET)` without an explicit `algorithms` option means the library will accept any algorithm the token header declares, including `none`. An attacker can craft a token with `"alg": "none"` and an empty signature to bypass authentication entirely. Always specify `{ algorithms: ["HS256"] }` (or your chosen algorithm) as the third argument.',
+ 'critical', '    const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;', 1),
+('f7a8b9c0-d1e2-4f3a-4b5c-6d7e8f9a0b12', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
+ 'SQL injection in role update query',
+ 'The PATCH route builds the SQL query using string concatenation: `"UPDATE users SET role = ''" + role + "'' WHERE id = $1"`. The `role` value comes directly from `req.body` and is not parameterized, allowing SQL injection. Use a parameterized query: `"UPDATE users SET role = $2 WHERE id = $1", [userId, role]`.',
+ 'critical', '  await db.query("UPDATE users SET role = ''''\" + role + \"'''' WHERE id = $1", [userId]);', 2),
+('a8b9c0d1-e2f3-4a4b-5c6d-7e8f9a0b1c23', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
+ 'Token accepted from query string exposes credentials in logs',
+ 'Accepting the JWT from `req.query.token` means the token appears in server access logs, browser history, Referer headers, and proxy logs. This significantly increases the attack surface for token theft. If WebSocket auth is needed, use a short-lived ticket exchange pattern instead of passing the long-lived JWT as a query parameter.',
+ 'suggestion', '  if (typeof req.query.token === "string") {', 3),
+('b9c0d1e2-f3a4-4b5c-6d7e-8f9a0b1c2d34', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
+ 'Role comparison is case-sensitive — authorize("Admin") vs token role "admin"',
+ 'The `authorize` middleware uses `allowedRoles.includes(req.user.role)` which is case-sensitive. The route passes `"Admin"` but JWT tokens commonly store roles in lowercase (e.g., `"admin"`). This mismatch silently denies access to valid admins. Normalize roles to lowercase before comparison, or establish a convention and validate at token creation.',
+ 'suggestion', '  router.get("/users", authorize("Admin"), async (req: AuthenticatedRequest, res) => {', 4),
+('c0d1e2f3-a4b5-4c6d-7e8f-9a0b1c2d3e45', 'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80',
+ 'Inconsistent error response shape',
+ 'Some endpoints return `{ error: "..." }` (authenticate returns 401 with `error`, authorize returns 401 with `error`) while others return `{ message: "..." }` (authenticate returns 403 with `message`, authorize returns 403 with `message`). API consumers cannot reliably parse error responses. Standardize on a single shape like `{ error: { code: string, message: string } }`.',
+ 'nitpick', '    return res.status(403).json({ message: "Invalid or expired token" });', 5)
+on conflict (id) do nothing;
+
+
+-- ---------------------------------------------------------------------------
+-- Exercise 12: Add file upload endpoint with validation
+-- ---------------------------------------------------------------------------
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
+values (
+  'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90',
+  'Add file upload endpoint with validation',
+  'This PR adds a file upload API endpoint using Multer. It validates file types, limits file size, and stores uploads to disk. A helper utility sanitizes file names before writing.',
+  'Mid',
+  array['TypeScript', 'Node.js', 'Express'],
+  array['security', 'api', 'error-handling'],
+  'priya-s',
+  'main',
+  'feat/file-upload',
+  array[
+    'Path traversal via unsanitized original filename — the sanitize function only strips spaces, not directory separators.',
+    'MIME type check uses user-supplied mimetype field from the request, which can be spoofed — should verify magic bytes.',
+    'Missing file cleanup on validation failure — rejected files are still written to disk by Multer before the handler runs.'
+  ]
+) on conflict (id) do nothing;
+
+-- Exercise 12 — Files
+insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
+  ('a1a2a3a4-b5b6-4c7c-8d8d-9e9e0f0f1a1b', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90', 'src/routes/upload.ts', 52, 0, 0),
+  ('b2b3b4b5-c6c7-4d8d-9e9e-0f0f1a1a2b2c', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90', 'src/utils/sanitize.ts', 18, 0, 1)
+on conflict (id) do nothing;
+
+-- Exercise 12, File 1 — upload.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('c3c4c5c6-d7d8-4e9e-0f0f-1a1a2b2b3c3d', 'a1a2a3a4-b5b6-4c7c-8d8d-9e9e0f0f1a1b', '@@ -0,0 +1,52 @@',
+'[
+  {"type":"added","content":"import { Router, Request, Response } from \"express\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import multer from \"multer\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"import path from \"path\";","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"import fs from \"fs\";","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"import { sanitizeFilename } from \"../utils/sanitize\";","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"const UPLOAD_DIR = path.join(__dirname, \"../../uploads\");","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"const ALLOWED_TYPES = [\"image/jpeg\", \"image/png\", \"application/pdf\"];","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"const storage = multer.diskStorage({","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"  destination: (_req, _file, cb) => {","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"    if (!fs.existsSync(UPLOAD_DIR)) {","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"      fs.mkdirSync(UPLOAD_DIR, { recursive: true });","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"    cb(null, UPLOAD_DIR);","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"  },","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"  filename: (_req, file, cb) => {","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"    const safeName = sanitizeFilename(file.originalname);","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"    cb(null, `${Date.now()}-${safeName}`);","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"  },","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"const upload = multer({","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"  storage,","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"  limits: { fileSize: MAX_FILE_SIZE },","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"const router = Router();","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"router.post(\"/upload\", upload.single(\"file\"), async (req: Request, res: Response) => {","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"  try {","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"    if (!req.file) {","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"      return res.status(400).json({ error: \"No file provided\" });","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":36},
+  {"type":"added","content":"    if (!ALLOWED_TYPES.includes(req.file.mimetype)) {","oldLineNumber":null,"newLineNumber":37},
+  {"type":"added","content":"      return res.status(400).json({ error: \"File type not allowed\" });","oldLineNumber":null,"newLineNumber":38},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":39},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":40},
+  {"type":"added","content":"    const fileUrl = `/uploads/${req.file.filename}`;","oldLineNumber":null,"newLineNumber":41},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":42},
+  {"type":"added","content":"    return res.status(201).json({","oldLineNumber":null,"newLineNumber":43},
+  {"type":"added","content":"      message: \"File uploaded successfully\",","oldLineNumber":null,"newLineNumber":44},
+  {"type":"added","content":"      url: fileUrl,","oldLineNumber":null,"newLineNumber":45},
+  {"type":"added","content":"      size: req.file.size,","oldLineNumber":null,"newLineNumber":46},
+  {"type":"added","content":"    });","oldLineNumber":null,"newLineNumber":47},
+  {"type":"added","content":"  } catch (err) {","oldLineNumber":null,"newLineNumber":48},
+  {"type":"added","content":"    console.error(\"Upload failed:\", err);","oldLineNumber":null,"newLineNumber":49},
+  {"type":"added","content":"    return res.status(500).json({ error: \"Upload failed\" });","oldLineNumber":null,"newLineNumber":50},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":51},
+  {"type":"added","content":"});","oldLineNumber":null,"newLineNumber":52}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 12, File 2 — sanitize.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('d4d5d6d7-e8e9-4f0f-1a1a-2b2b3c3c4d4e', 'b2b3b4b5-c6c7-4d8d-9e9e-0f0f1a1a2b2c', '@@ -0,0 +1,18 @@',
+'[
+  {"type":"added","content":"/**","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":" * Sanitizes a filename by removing unsafe characters.","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":" * Preserves the file extension.","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":" */","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"export function sanitizeFilename(filename: string): string {","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  // Remove leading/trailing whitespace","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  let sanitized = filename.trim();","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"  // Replace spaces with underscores","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"  sanitized = sanitized.replace(/ /g, \"_\");","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"  // Remove special characters (keep alphanumeric, dots, underscores, hyphens)","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"  sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, \"\");","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"  // Prevent empty filenames","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"  if (sanitized.length === 0) {","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"    return \"unnamed_file\";","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"  }","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"  return sanitized;","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":21}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 12 — Expected Issues
+insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
+('e5e6e7e8-f9f0-4a1a-2b2b-3c3c4d4d5e5f', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90',
+ 'MIME type validation relies on user-supplied Content-Type header',
+ 'The check `ALLOWED_TYPES.includes(req.file.mimetype)` uses the MIME type from the multipart header, which is entirely controlled by the client. An attacker can upload a malicious `.exe` or `.html` file with a spoofed `image/jpeg` Content-Type. Validate the actual file content using magic bytes (e.g., the `file-type` npm package) instead of trusting the request header.',
+ 'critical', '    if (!ALLOWED_TYPES.includes(req.file.mimetype)) {', 0),
+('f6f7f8f9-0a0b-4c1c-2d2d-3e3e4f4f5a5b', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90',
+ 'File is written to disk before validation — no cleanup on rejection',
+ 'Multer with `diskStorage` writes the file to the upload directory *before* the route handler executes. If the MIME type check fails, the handler returns 400 but the file remains on disk. Over time, this fills the storage with rejected uploads. Either use `multer.memoryStorage()` and write manually after validation, or use Multer''s `fileFilter` callback to reject files before they are saved, or delete the file in the rejection branch.',
+ 'critical', '      return res.status(400).json({ error: "File type not allowed" });', 1),
+('a7a8a9b0-1b1c-4d2d-3e3e-4f4f5a5a6b6c', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90',
+ 'Path traversal — sanitize function does not strip directory separators',
+ 'The `sanitizeFilename` regex `[^a-zA-Z0-9._-]` does remove `/` and `\\` characters, but it runs *after* trimming and replacing spaces. A filename like `../../../etc/passwd` would be sanitized to `..etc.passwd` — the dots are preserved by the regex. While `..` alone won''t traverse with `Date.now()-` prefix, the function''s contract claims to sanitize but doesn''t use `path.basename()` to strip directory components. Use `path.basename(filename)` as the first step to extract only the filename portion before applying character filters.',
+ 'suggestion', '  sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, \"\");', 2),
+('b8b9c0d1-2c2d-4e3e-4f4f-5a5a6b6b7c7d', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90',
+ 'Upload directory served statically without access control',
+ 'The response returns `/uploads/${req.file.filename}` as a URL, implying the uploads directory is served via `express.static()`. But there is no authentication check on static file access, meaning any uploaded file is publicly accessible to anyone who knows or guesses the URL. Consider serving files through an authenticated route or adding signed URLs.',
+ 'suggestion', '    const fileUrl = `/uploads/${req.file.filename}`;', 3),
+('c9d0e1f2-3d3e-4f4f-5a5a-6b6b7c7c8d8e', 'e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a90',
+ 'Timestamp-based filename is predictable',
+ 'Using `Date.now()` as a filename prefix is sequential and predictable. An attacker can enumerate uploaded files by guessing timestamps. Use `crypto.randomUUID()` or `crypto.randomBytes(16).toString("hex")` for an unguessable filename.',
+ 'nitpick', '    cb(null, `${Date.now()}-${safeName}`);', 4)
+on conflict (id) do nothing;
+
+
+-- ---------------------------------------------------------------------------
+-- Exercise 13: Build accessible modal dialog component
+-- ---------------------------------------------------------------------------
+insert into public.exercises (id, title, description, difficulty, tech_stack, tags, author, base_branch, head_branch, commonly_missed)
+values (
+  'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00',
+  'Build accessible modal dialog component',
+  'This PR adds a reusable Modal component with open/close animations, a backdrop overlay, and keyboard navigation. It is intended to replace the existing non-accessible modal across the app.',
+  'Junior',
+  array['React', 'TypeScript', 'CSS'],
+  array['accessibility', 'ui', 'hooks'],
+  'nina-k',
+  'main',
+  'feat/accessible-modal',
+  array[
+    'Focus is not trapped inside the modal — users can Tab to elements behind the backdrop.',
+    'Pressing Escape only works when the modal body is focused, not globally.',
+    'The backdrop click handler fires on mouseup inside the modal content, unexpectedly closing the dialog.'
+  ]
+) on conflict (id) do nothing;
+
+-- Exercise 13 — Files
+insert into public.exercise_files (id, exercise_id, path, additions, deletions, sort_order) values
+  ('d2d3d4d5-e6e7-4f8f-9a9a-0b0b1c1c2d2e', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00', 'src/components/Modal.tsx', 58, 0, 0),
+  ('e3e4e5e6-f7f8-4a9a-0b0b-1c1c2d2d3e3f', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00', 'src/hooks/useModal.ts', 22, 0, 1)
+on conflict (id) do nothing;
+
+-- Exercise 13, File 1 — Modal.tsx chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('f4f5f6f7-a8a9-4b0b-1c1c-2d2d3e3e4f4a', 'd2d3d4d5-e6e7-4f8f-9a9a-0b0b1c1c2d2e', '@@ -0,0 +1,58 @@',
+'[
+  {"type":"added","content":"import React, { useEffect, useRef } from \"react\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"import { createPortal } from \"react-dom\";","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"interface ModalProps {","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"  isOpen: boolean;","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  onClose: () => void;","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  title: string;","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"  children: React.ReactNode;","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"export function Modal({ isOpen, onClose, title, children }: ModalProps) {","oldLineNumber":null,"newLineNumber":11},
+  {"type":"added","content":"  const modalRef = useRef<HTMLDivElement>(null);","oldLineNumber":null,"newLineNumber":12},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":13},
+  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":14},
+  {"type":"added","content":"    if (isOpen && modalRef.current) {","oldLineNumber":null,"newLineNumber":15},
+  {"type":"added","content":"      modalRef.current.focus();","oldLineNumber":null,"newLineNumber":16},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":17},
+  {"type":"added","content":"  }, [isOpen]);","oldLineNumber":null,"newLineNumber":18},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":19},
+  {"type":"added","content":"  useEffect(() => {","oldLineNumber":null,"newLineNumber":20},
+  {"type":"added","content":"    const handleKeyDown = (e: KeyboardEvent) => {","oldLineNumber":null,"newLineNumber":21},
+  {"type":"added","content":"      if (e.key === \"Escape\") {","oldLineNumber":null,"newLineNumber":22},
+  {"type":"added","content":"        onClose();","oldLineNumber":null,"newLineNumber":23},
+  {"type":"added","content":"      }","oldLineNumber":null,"newLineNumber":24},
+  {"type":"added","content":"    };","oldLineNumber":null,"newLineNumber":25},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":26},
+  {"type":"added","content":"    if (isOpen) {","oldLineNumber":null,"newLineNumber":27},
+  {"type":"added","content":"      document.addEventListener(\"keydown\", handleKeyDown);","oldLineNumber":null,"newLineNumber":28},
+  {"type":"added","content":"    }","oldLineNumber":null,"newLineNumber":29},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":30},
+  {"type":"added","content":"    return () => document.removeEventListener(\"keydown\", handleKeyDown);","oldLineNumber":null,"newLineNumber":31},
+  {"type":"added","content":"  }, [isOpen]);","oldLineNumber":null,"newLineNumber":32},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":33},
+  {"type":"added","content":"  if (!isOpen) return null;","oldLineNumber":null,"newLineNumber":34},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":35},
+  {"type":"added","content":"  return createPortal(","oldLineNumber":null,"newLineNumber":36},
+  {"type":"added","content":"    <div","oldLineNumber":null,"newLineNumber":37},
+  {"type":"added","content":"      className=\"fixed inset-0 z-50 flex items-center justify-center bg-black/50\"","oldLineNumber":null,"newLineNumber":38},
+  {"type":"added","content":"      onClick={onClose}","oldLineNumber":null,"newLineNumber":39},
+  {"type":"added","content":"    >","oldLineNumber":null,"newLineNumber":40},
+  {"type":"added","content":"      <div","oldLineNumber":null,"newLineNumber":41},
+  {"type":"added","content":"        ref={modalRef}","oldLineNumber":null,"newLineNumber":42},
+  {"type":"added","content":"        className=\"bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full mx-4 p-6\"","oldLineNumber":null,"newLineNumber":43},
+  {"type":"added","content":"        onClick={(e) => e.stopPropagation()}","oldLineNumber":null,"newLineNumber":44},
+  {"type":"added","content":"        tabIndex={-1}","oldLineNumber":null,"newLineNumber":45},
+  {"type":"added","content":"      >","oldLineNumber":null,"newLineNumber":46},
+  {"type":"added","content":"        <div className=\"flex items-center justify-between mb-4\">","oldLineNumber":null,"newLineNumber":47},
+  {"type":"added","content":"          <h2 className=\"text-lg font-semibold\">{title}</h2>","oldLineNumber":null,"newLineNumber":48},
+  {"type":"added","content":"          <button onClick={onClose} className=\"text-gray-400 hover:text-gray-600\">","oldLineNumber":null,"newLineNumber":49},
+  {"type":"added","content":"            \u2715","oldLineNumber":null,"newLineNumber":50},
+  {"type":"added","content":"          </button>","oldLineNumber":null,"newLineNumber":51},
+  {"type":"added","content":"        </div>","oldLineNumber":null,"newLineNumber":52},
+  {"type":"added","content":"        <div>{children}</div>","oldLineNumber":null,"newLineNumber":53},
+  {"type":"added","content":"      </div>","oldLineNumber":null,"newLineNumber":54},
+  {"type":"added","content":"    </div>,","oldLineNumber":null,"newLineNumber":55},
+  {"type":"added","content":"    document.body","oldLineNumber":null,"newLineNumber":56},
+  {"type":"added","content":"  );","oldLineNumber":null,"newLineNumber":57},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":58}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 13, File 2 — useModal.ts chunk
+insert into public.file_chunks (id, file_id, header, lines, sort_order) values
+('a5a6a7a8-b9b0-4c1c-2d2d-3e3e4f4f5a5b', 'e3e4e5e6-f7f8-4a9a-0b0b-1c1c2d2d3e3f', '@@ -0,0 +1,22 @@',
+'[
+  {"type":"added","content":"import { useState, useCallback } from \"react\";","oldLineNumber":null,"newLineNumber":1},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":2},
+  {"type":"added","content":"export function useModal(initialState = false) {","oldLineNumber":null,"newLineNumber":3},
+  {"type":"added","content":"  const [isOpen, setIsOpen] = useState(initialState);","oldLineNumber":null,"newLineNumber":4},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":5},
+  {"type":"added","content":"  const open = useCallback(() => setIsOpen(true), []);","oldLineNumber":null,"newLineNumber":6},
+  {"type":"added","content":"  const close = useCallback(() => setIsOpen(false), []);","oldLineNumber":null,"newLineNumber":7},
+  {"type":"added","content":"  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);","oldLineNumber":null,"newLineNumber":8},
+  {"type":"added","content":"","oldLineNumber":null,"newLineNumber":9},
+  {"type":"added","content":"  return { isOpen, open, close, toggle };","oldLineNumber":null,"newLineNumber":10},
+  {"type":"added","content":"}","oldLineNumber":null,"newLineNumber":11}
+]'::jsonb, 0)
+on conflict (id) do nothing;
+
+-- Exercise 13 — Expected Issues
+insert into public.exercise_expected_issues (id, exercise_id, title, description, severity, line, sort_order) values
+('b6b7b8b9-c0c1-4d2d-3e3e-4f4f5a5a6b6c', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00',
+ 'No focus trap — Tab key moves focus behind the modal',
+ 'The modal does not trap focus within its content. A user pressing Tab will eventually focus elements behind the backdrop, which is a WCAG 2.1 failure (2.4.3 Focus Order). Implement a focus trap by intercepting Tab/Shift+Tab on the first and last focusable elements, or use a library like `focus-trap-react`. The `<dialog>` element provides this natively.',
+ 'critical', '        tabIndex={-1}', 0),
+('c7c8c9d0-d1d2-4e3e-4f4f-5a5a6b6b7c7d', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00',
+ 'Missing ARIA attributes — not recognized as a dialog by screen readers',
+ 'The modal div has no `role="dialog"`, no `aria-modal="true"`, and no `aria-labelledby` linking it to the title. Screen readers will not announce this as a dialog or its title. Add `role="dialog" aria-modal="true" aria-labelledby="modal-title"` to the content wrapper and `id="modal-title"` to the `<h2>`.',
+ 'critical', '        className=\"bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full mx-4 p-6\"', 1),
+('d8d9e0f1-e2e3-4f4f-5a5a-6b6b7c7c8d8e', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00',
+ 'Body scroll not locked when modal is open',
+ 'The page behind the modal can still be scrolled while the modal is open, which is disorienting for users and can cause layout shifts. Add `document.body.style.overflow = "hidden"` when the modal opens and restore it on close. Clean this up in the useEffect return.',
+ 'suggestion', '      modalRef.current.focus();', 2),
+('e9f0a1b2-f3f4-4a5a-6b6b-7c7c8d8d9e9f', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00',
+ 'Close button has no accessible label',
+ 'The close button contains only the "✕" character, which screen readers will announce as "multiplication sign" or skip entirely. Add `aria-label="Close"` to the button so assistive technology users know its purpose.',
+ 'suggestion', '          <button onClick={onClose} className=\"text-gray-400 hover:text-gray-600\">',  3),
+('f0a1b2c3-d4d5-4e6e-7f7f-8a8a9b9b0c0d', 'f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b00',
+ 'onClose missing from useEffect dependency array',
+ 'The Escape key handler effect depends on `onClose` but only lists `[isOpen]` in its dependency array. If the parent re-creates the `onClose` callback, the effect will capture a stale reference. Add `onClose` to the dependency array, or ensure the parent wraps it in `useCallback`.',
+ 'nitpick', '  }, [isOpen]);', 4)
+on conflict (id) do nothing;

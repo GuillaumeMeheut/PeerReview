@@ -3,9 +3,38 @@ import { z } from 'zod';
 import { openai } from '@ai-sdk/openai';
 import { getExercise, getReviewComments, getUser, getAIFeedbackForReview, getUserSubscription } from '@/lib/supabase/queries';
 import { createServerSupabaseClientWithServiceRole } from '@/lib/supabase/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 import { getPostHogClient } from '@/lib/posthog-server';
 
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(5, '1 m'),
+  analytics: true,
+  enableProtection: true,
+});
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? '127.0.0.1';
+  const { success, limit, reset, remaining } = await ratelimit.limit(
+    `ratelimit_${ip}`
+  );
+
+  if (!success) {
+    return Response.json(
+      { error: 'Too many requests. Please try again later.' },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': limit.toString(),
+          'X-RateLimit-Remaining': remaining.toString(),
+          'X-RateLimit-Reset': reset.toString(),
+        },
+      }
+    );
+  }
+
   const { prId, reviewId }: { prId: string, reviewId: string } = await req.json();
 
   const { user } = await getUser();
@@ -30,6 +59,15 @@ export async function POST(req: Request) {
       JSON.stringify({ error: `You have run out of free AI credits. Please upgrade to premium to continue.` }),
       { status: 403, headers: { 'Content-Type': 'application/json' } }
     );
+  }
+
+  // Deduplication: prevent concurrent AI generated responses
+  const redis = Redis.fromEnv();
+  const lockKey = `ai_feedback_lock_${reviewId}_${user.id}`;
+  const isLocked = await redis.set(lockKey, 'locked', { nx: true, ex: 60 });
+
+  if (!isLocked) {
+    return Response.json({ error: 'AI Feedback is currently being generated for this review. Please check back in a minute.' }, { status: 409 });
   }
 
   try {
@@ -192,6 +230,9 @@ export async function POST(req: Request) {
     console.error('Error generating AI feedback:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred while generating feedback.';
     return Response.json({ error: errorMessage }, { status: 500 });
+  } finally {
+    // Release the block
+    await redis.del(lockKey);
   }
 }
 
